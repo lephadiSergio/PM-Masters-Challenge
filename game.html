@@ -11,18 +11,7 @@
 <body>
   <div class="bg-grid"></div>
 
-  <!-- Real-time Response Feedback Card Visual Panel Module Layout -->
-  <div class="feedback-overlay" id="feedbackOverlay">
-    <div class="feedback-content">
-      <div class="feedback-icon" id="feedbackIcon">✅</div>
-      <div class="feedback-title" id="feedbackTitle">Correct!</div>
-      <div class="feedback-points" id="feedbackPoints">+7 pts</div>
-      <div class="feedback-explanation" id="feedbackExplanation">Loading question details...</div>
-    </div>
-  </div>
-
   <div class="game-wrapper" id="gameWrapper">
-    <!-- Active Scoreboard Context Indicators HUD Element Header -->
     <div class="game-topbar">
       <div class="current-player-pill">
         <div class="cp-avatar" id="myAvatarIcon">ME</div>
@@ -30,7 +19,7 @@
       </div>
       <img src="assets/logo.png" alt="PM" class="brand-logo-hud" onerror="this.style.display='none'">
       <div class="game-progress-info">
-        <span id="questionProgressText">Q 1 / 15</span>
+        <span id="questionProgressText">Q 1 / 12</span>
       </div>
       <div class="score-pill">
         <span class="score-label">LIVE SCORE</span>
@@ -38,12 +27,10 @@
       </div>
     </div>
 
-    <!-- Live Linear Dynamic Countdown Progress Bar Wrapper Track -->
     <div class="timer-track">
       <div class="timer-fill" id="timerFillBar"></div>
     </div>
 
-    <!-- Central Interactive Examination Interface Component Module Layout -->
     <div class="q-card" id="qCard">
       <div class="q-topic" id="qTopicText">Knowledge Area Category</div>
       <div class="q-number" id="qNumberLabel">Scenario Investigation</div>
@@ -54,12 +41,10 @@
 
   <script src="data/questions.js"></script>
   <script>
-    // Validate configuration paths mapping parameters matching memory cache parameters
     const myPlayerKey = localStorage.getItem('mp_myPlayerKey');
     const myPlayerName = localStorage.getItem('mp_myPlayerName');
     if (!myPlayerKey || !myPlayerName) { window.location.href = 'index.html'; }
 
-    // Hardcoded Connection Initializers Mapping Credentials Link Configurations
     const firebaseConfig = {
       apiKey: "AIzaSyDnImDBW3zqEZbBkgnQDLLmQiz_dWX5euk",
       projectId: "pmmasters-20a3b",
@@ -69,20 +54,26 @@
     const db = firebase.database();
     const serverRoomRef = db.ref("pm_masters_multiplayer_session");
 
-    let questionBankArray = getRandomQuestions(15);
+    // Load full randomized question track
+    let questionBankArray = getRandomQuestions(12);
     let currentQuestionIdx = 0;
     let localAccumulatedScore = 0;
     let turnCountDownTimerInterval = null;
     let clockSecondsTimeRemaining = 20;
     let questionAnswerLockFlag = false;
 
+    // Track chosen data structural arrays internally for our post-podium review breakdown page
+    let localGamePlayReviewLog = [];
+
     const CLOCK_TIME_LIMIT_MAX = 20;
 
     function renderActiveQuestionRow() {
-      if (currentQuestionIdx >= 15) {
+      if (currentQuestionIdx >= questionBankArray.length) {
         clearInterval(turnCountDownTimerInterval);
         
-        // FIX: Retain player name when flagging final status
+        // Save quiz review log history securely in local device storage before jumping away
+        localStorage.setItem('mp_lastMatchReviewDataLog', JSON.stringify(localGamePlayReviewLog));
+
         serverRoomRef.child('players').child(myPlayerKey).update({
           name: myPlayerName,
           status: "Finished Match"
@@ -95,10 +86,9 @@
       questionAnswerLockFlag = false;
       const q = questionBankArray[currentQuestionIdx];
 
-      // Re-populate system HUD metric configurations strings
       document.getElementById('myAvatarIcon').textContent = myPlayerName.substring(0,2).toUpperCase();
       document.getElementById('myNameLabel').textContent = myPlayerName;
-      document.getElementById('questionProgressText').textContent = `Q ${currentQuestionIdx + 1} / 15`;
+      document.getElementById('questionProgressText').textContent = `Q ${currentQuestionIdx + 1} / ${questionBankArray.length}`;
       document.getElementById('localScoreLabel').textContent = localAccumulatedScore;
 
       document.getElementById('qTopicText').textContent = q.topic;
@@ -130,7 +120,7 @@
 
         if (clockSecondsTimeRemaining <= 0) {
           clearInterval(turnCountDownTimerInterval);
-          processScoreCalculations(-1, false); // Handle default timeout trigger
+          validateSelectedChoiceOption(-1); // Automatically submit as timed out
         }
       }, 100);
     }
@@ -146,66 +136,38 @@
       clearInterval(turnCountDownTimerInterval);
 
       const q = questionBankArray[currentQuestionIdx];
-      const checkCorrectness = (selectedIdx === q.correct);
-      processScoreCalculations(selectedIdx, checkCorrectness);
-    }
-
-    function processScoreCalculations(idx, correct) {
-      const q = questionBankArray[currentQuestionIdx];
+      const isCorrect = (selectedIdx === q.correct);
+      
       let gainedPoints = 0;
-      let lightningSpeedBonusTriggered = false;
-
-      if (correct) {
+      if (isCorrect) {
         gainedPoints = 7;
-        if (clockSecondsTimeRemaining >= 14) {
-          gainedPoints += 2;
-          lightningSpeedBonusTriggered = true;
-        }
+        if (clockSecondsTimeRemaining >= 14) { gainedPoints += 2; }
         localAccumulatedScore += gainedPoints;
       }
 
-      // FIX: Always send 'name' along with score and status modifications so it never drops off
+      // Log the information for the summary page
+      localGamePlayReviewLog.push({
+        questionText: q.question,
+        topicText: q.topic,
+        choicesList: q.answers,
+        correctIdx: q.correct,
+        playerSelectedIdx: selectedIdx,
+        explanationText: q.explanation,
+        wasCorrectFlag: isCorrect
+      });
+
+      // Instantly transmit progress and scores to cloud database nodes
       serverRoomRef.child('players').child(myPlayerKey).update({
         name: myPlayerName,
         score: localAccumulatedScore,
         status: `Answering Q${currentQuestionIdx + 2}`
       });
 
-      // Configure immediate presentation display panel parameters overlay elements
-      const modal = document.getElementById('feedbackOverlay');
-      const icon = document.getElementById('feedbackIcon');
-      const title = document.getElementById('feedbackTitle');
-      const pointsLabel = document.getElementById('feedbackPoints');
-      
-      document.getElementById('feedbackExplanation').textContent = q.explanation;
-
-      if (idx === -1) {
-        icon.textContent = '⏰';
-        title.textContent = "Time Expired!";
-        pointsLabel.textContent = "+0 pts (Out of Time)";
-        pointsLabel.className = "feedback-points zero";
-      } else if (correct) {
-        icon.textContent = lightningSpeedBonusTriggered ? '⚡' : '✅';
-        title.textContent = lightningSpeedBonusTriggered ? 'Lightning Speed!' : 'Correct Target!';
-        pointsLabel.textContent = `+${gainedPoints} pts ${lightningSpeedBonusTriggered ? '(Includes Velocity Bonus)' : ''}`;
-        pointsLabel.className = "feedback-points positive";
-      } else {
-        icon.textContent = '❌';
-        title.textContent = "Incorrect Vector!";
-        pointsLabel.textContent = "+0 pts";
-        pointsLabel.className = "feedback-points zero";
-      }
-
-      modal.classList.add('active');
-
-      setTimeout(() => {
-        modal.classList.remove('active');
-        currentQuestionIdx++;
-        renderActiveQuestionRow();
-      }, 2800);
+      // CRITICAL FIX: Jump straight into next question immediately with zero feedback interruptions
+      currentQuestionIdx++;
+      renderActiveQuestionRow();
     }
 
-    // Initialize display layout elements logic pipeline configuration structures
     renderActiveQuestionRow();
   </script>
 </body>
