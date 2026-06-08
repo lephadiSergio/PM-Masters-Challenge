@@ -15,22 +15,26 @@
     <div class="lb-header">
       <img src="assets/logo.png" alt="PM Masters Logo" class="brand-logo-main" style="margin: 0 auto 10px; display: block;" onerror="this.style.display='none'">
       <h1 class="lb-title">Live <span>Podium</span></h1>
-      <p class="lb-subtitle">Real-Time Tournament Tracking System</p>
+      <p class="lb-subtitle" id="lobbyIdentitySubtitle">Channel Real-Time Metric Tracking</p>
     </div>
 
-    <div class="results-list" id="liveScoreboardDisplayContainer" style="margin-bottom: 24px;">
-      <p style="text-align:center; color:var(--text3);">Parsing cross-device live network packets...</p>
-    </div>
+    <div class="results-list" id="liveScoreboardDisplayContainer" style="margin-bottom: 24px;"></div>
 
     <div class="lb-actions" style="display: flex; flex-direction: column; gap: 12px;">
-      <button class="action-btn primary" id="goToSummaryPageBtn" style="background: linear-gradient(135deg, var(--cyan), var(--purple)); box-shadow: 0 0 15px rgba(0,243,255,0.3);">Analyze My Performance Metrics 📊</button>
-      <button class="action-btn secondary" id="lobbyResetBtn" style="border-color: rgba(255,0,127,0.4); color: var(--pink);">Wipe Room & Reset Tournament 🔄</button>
+      <button class="action-btn primary" id="goToSummaryPageBtn" style="background: var(--purple);">Analyze My Performance Metrics 📊</button>
+      <button class="action-btn secondary" id="lobbyResetBtn">Clear Channel & Exit 🔄</button>
     </div>
   </div>
 
   <script>
+    window.history.pushState(null, null, window.location.href);
+    window.onpopstate = function () { window.location.replace('index.html'); };
+
     const myPlayerKey = localStorage.getItem('mp_myPlayerKey');
     const myPlayerName = localStorage.getItem('mp_myPlayerName');
+    const activeLobbyNode = localStorage.getItem('mp_selectedLobbyNode');
+    const mode = localStorage.getItem('mp_selectedMode');
+    const tier = localStorage.getItem('mp_selectedTier');
 
     const firebaseConfig = {
       apiKey: "AIzaSyDnImDBW3zqEZbBkgnQDLLmQiz_dWX5euk",
@@ -39,76 +43,55 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const serverRoomRef = db.ref("pm_masters_multiplayer_session");
+    const serverRoomRef = db.ref(`pm_masters_multiplayer_session/${activeLobbyNode}`);
 
-    // Math metrics calibrated explicitly for 10 short questions
-    const SCORE_THEORETICAL_MAX_CEILING = 10 * 9; 
+    document.getElementById('lobbyIdentitySubtitle').textContent = `Tracking Channel Room: ${activeLobbyNode}`;
 
-    function normalizeRawScoreToPercentage(rawScoreValue) {
-      return Math.min(100, Math.round((rawScoreValue / SCORE_THEORETICAL_MAX_CEILING) * 100));
-    }
+    let totalTasksCount = getSelectedLobbyDataset(mode, tier).length;
+    const MAX_THEORETICAL_POINTS = totalTasksCount * 10;
 
     serverRoomRef.child('players').on('value', (snapshot) => {
       const recordsMap = snapshot.val() || {};
-      
-      const compiledSortedRoster = Object.keys(recordsMap).map(keyId => {
+      const roster = Object.keys(recordsMap).map(keyId => {
         const item = recordsMap[keyId];
-        let cleanName = item.name;
-        if (!cleanName) {
-          cleanName = (keyId === myPlayerKey) ? myPlayerName : "Gladiator Connected";
-        }
-
         return {
-          id: keyId,
-          name: cleanName,
+          name: item.name || "Gladiator",
           raw: item.score || 0,
-          percentage: normalizeRawScoreToPercentage(item.score || 0),
+          percentage: Math.min(100, Math.round(((item.score || 0) / MAX_THEORETICAL_POINTS) * 100)),
           status: item.status || "Active"
         };
       }).sort((a, b) => b.raw - a.raw);
 
-      const targetUIContainer = document.getElementById('liveScoreboardDisplayContainer');
-      targetUIContainer.innerHTML = '';
+      const container = document.getElementById('liveScoreboardDisplayContainer');
+      container.innerHTML = '';
 
-      compiledSortedRoster.forEach((playerNode, index) => {
-        const rankPrefixString = (index === 0) ? "🥇" : (index === 1) ? "🥈" : (index === 2) ? "🥉" : `#${index + 1}`;
-        const inlineStatusMarkerBadge = (playerNode.status === "Finished Match") 
-          ? `<span style="color:var(--cyan); font-size:0.75rem; font-family:'Share Tech Mono'; margin-left:10px;">[DONE]</span>` 
-          : `<span style="color:var(--pink); font-size:0.75rem; font-family:'Share Tech Mono'; margin-left:10px;">(${playerNode.status})</span>`;
+      roster.forEach((playerNode, index) => {
+        const rankPrefix = (index === 0) ? "🥇" : (index === 1) ? "🥈" : (index === 2) ? "🥉" : `#${index + 1}`;
+        const doneBadge = (playerNode.status === "Finished Match") 
+          ? `<span style="color:var(--cyan); font-size:0.75rem; margin-left:10px;">[DONE]</span>` 
+          : `<span style="color:var(--pink); font-size:0.75rem; margin-left:10px;">(${playerNode.status})</span>`;
 
-        const rowDivElement = document.createElement('div');
-        rowDivElement.className = 'res-row';
-        
-        if (index === 0) {
-          rowDivElement.style.border = "1px solid var(--gold)";
-          rowDivElement.style.boxShadow = "0 0 15px rgba(255, 215, 0, 0.2)";
-        }
+        const row = document.createElement('div');
+        row.className = 'res-row';
+        if (index === 0) row.style.border = "1px solid var(--gold)";
 
-        rowDivElement.innerHTML = `
+        row.innerHTML = `
           <div class="res-player">
-            <span class="res-rank" style="color:${index === 0 ? 'var(--gold)' : 'var(--text3)'}; font-weight:700; margin-right:12px;">${rankPrefixString}</span>
-            <span class="res-name" style="color:#fff; font-weight:600;">${playerNode.name} ${inlineStatusMarkerBadge}</span>
+            <span style="font-weight:700; margin-right:12px;">${rankPrefix}</span>
+            <span style="color:#fff; font-weight:600;">${playerNode.name} ${doneBadge}</span>
           </div>
-          <span class="res-score" style="color:${index === 0 ? 'var(--gold)' : 'var(--cyan)'}; font-weight:700;">${playerNode.percentage}%</span>
+          <span style="color:var(--cyan); font-weight:700;">${playerNode.percentage}%</span>
         `;
-        targetUIContainer.appendChild(rowDivElement);
+        container.appendChild(row);
       });
     });
 
-    document.getElementById('goToSummaryPageBtn').addEventListener('click', () => {
-      window.location.href = 'summary.html';
-    });
-
+    document.getElementById('goToSummaryPageBtn').addEventListener('click', () => { window.location.replace('summary.html'); });
     document.getElementById('lobbyResetBtn').addEventListener('click', () => {
-      if (confirm("This cleans out the entire current lobby room data. Ready to start a fresh multiplayer round?")) {
-        serverRoomRef.set({
-          gameState: "lobby",
-          players: {}
-        }).then(() => {
-          localStorage.clear();
-          window.location.href = 'index.html';
-        });
-      }
+      serverRoomRef.set(null).then(() => {
+        localStorage.clear();
+        window.location.replace('index.html');
+      });
     });
   </script>
 </body>
