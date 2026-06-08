@@ -299,9 +299,36 @@ const EXAM_LEVEL_3_BANK = [
   }
 ];
 
-function getSelectedLobbyDataset(mode, tier) {
-  if (mode === "study") return [...STUDY_CONCEPTS_BANK];
-  if (tier === "level2") return [...EXAM_LEVEL_2_BANK];
-  if (tier === "level3") return [...EXAM_LEVEL_3_BANK];
-  return [...EXAM_LEVEL_1_BANK];
+// Helper to seed-shuffle an array so EVERY player gets the exact same random order
+function seedShuffleArray(array, seedString) {
+  let tempArray = [...array];
+  let seed = 0;
+  
+  // Create a numeric value out of the lobby name string
+  for (let i = 0; i < seedString.length; i++) {
+    seed += seedString.charCodeAt(i);
+  }
+
+  // Custom deterministic pseudo-random shuffler (Fisher-Yates style using linear congruential generator)
+  for (let i = tempArray.length - 1; i > 0; i--) {
+    seed = (seed * 9301 + 49297) % 233280;
+    let rnd = seed / 233280;
+    let j = Math.floor(rnd * (i + 1));
+    
+    let temp = tempArray[i];
+    tempArray[i] = tempArray[j];
+    tempArray[j] = temp;
+  }
+  return tempArray;
+}
+
+function getSelectedLobbyDataset(mode, tier, lobbyNodeName = "default_lobby") {
+  let baseQuestions = [];
+  if (mode === "study") baseQuestions = [...STUDY_CONCEPTS_BANK];
+  else if (tier === "level2") baseQuestions = [...EXAM_LEVEL_2_BANK];
+  else if (tier === "level3") baseQuestions = [...EXAM_LEVEL_3_BANK];
+  else baseQuestions = [...EXAM_LEVEL_1_BANK];
+
+  // Shuffles the entire active bank completely while ensuring every player sees the matching sequence
+  return seedShuffleArray(baseQuestions, lobbyNodeName);
 }
