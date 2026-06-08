@@ -1,147 +1,147 @@
 const ALL_QUESTIONS_BANK = [
   {
-    topic: "Scope Management",
-    question: "A key stakeholder requests a minor feature addition during an active sprint that was not part of the agreed sprint goal. What is the PM's best first action?",
-    answers: [
-      "Directly add it to the active sprint backlog to keep the stakeholder happy.",
-      "Reject the request immediately as it violates the Agile manifesto rules.",
-      "Log the feature request in the product backlog for prioritization during the next planning session.",
-      "Escalate the stakeholder's behavior directly to the project sponsor."
-    ],
-    correct: 2,
-    explanation: "Product scope alterations in Agile must go through proper product backlog management rather than disrupting an active sprint commitment."
-  },
-  {
-    topic: "Risk Management",
-    question: "Your team identifies a critical regulatory dependency that might delay the software release by two months. What strategy represents risk mitigation?",
-    answers: [
-      "Buying project insurance to cover the financial losses of the delay.",
-      "Allocating an extra developer to run parallel validation tasks early to clear dependencies faster.",
-      "Updating the timeline and accepting that the project will simply finish late.",
-      "Moving the entire project operations to a country without that regulatory body."
-    ],
-    correct: 1,
-    explanation: "Mitigation involves taking proactive steps to reduce the probability or impact of a risk before it occurs, such as running parallel tracks."
-  },
-  {
-    topic: "Stakeholder Engagement",
-    question: "An influential executive frequently misses steering committee meetings but complains about project outcomes via email. How should the PM classify them on the Power/Interest Grid?",
-    answers: [
-      "Low Power / Low Interest (Monitor only)",
-      "High Power / Low Interest (Keep Satisfied)",
-      "Low Power / High Interest (Keep Informed)",
-      "High Power / High Interest (Manage Closely)"
-    ],
-    correct: 1,
-    explanation: "Executives hold high power. Missing meetings shows low active engagement/interest, but their complaints mean they must be kept satisfied to avoid project disruption."
-  },
-  {
-    topic: "Resource Management",
-    question: "Two senior database architects are locked in an aggressive technical disagreement regarding data schema architecture. What conflict resolution method creates a win-win scenario?",
-    answers: [
-      "Smoothing: Emphasizing areas of agreement and ignoring the differences.",
-      "Forcing: Pushing one architect's opinion over the other using managerial authority.",
-      "Collaborating: Hosting an architecture workshop to synthesize a new optimal solution together.",
-      "Compromising: Finding an answer that partially satisfies both but leaves both sub-optimized."
-    ],
-    correct: 2,
-    explanation: "Collaborating incorporates multiple viewpoints to reach a consensus, leading to true problem-solving and a win-win outcome."
-  },
-  {
-    topic: "Schedule Management",
-    question: "The critical path of your project has a total float of zero days. A non-critical task with 5 days of total float gets delayed by 3 days. What happens to the overall completion date?",
-    answers: [
-      "The project completion date is delayed by 3 days.",
-      "The project completion date remains entirely unchanged.",
-      "The critical path changes and shifts to this delayed task.",
-      "The project completion date accelerates by 2 days."
-    ],
-    correct: 1,
-    explanation: "Since the delayed task has 5 days of float, a delay of only 3 days does not exceed its buffer, meaning it will not impact the final project delivery timeline."
-  },
-  {
-    topic: "Procurement Management",
-    question: "The project scope is loosely defined and expected to change significantly as research develops. Which contract type is safest for the buyer?",
-    answers: [
-      "Firm-Fixed-Price (FFP)",
-      "Cost-Plus-Fixed-Fee (CPFF)",
-      "Time and Materials (T&M)",
-      "Fixed-Price-Economic-Price-Adjustment (FP-EPA)"
-    ],
-    correct: 1,
-    explanation: "When scope is highly uncertain, Fixed-Price contracts force sellers to over-bid safely or drop quality. Cost-Reimbursable (Cost-Plus) contracts allow flexibility safely for buyers."
-  },
-  {
-    topic: "Quality Management",
-    question: "A quality control chart reveals that seven consecutive data points are falling on one side of the mean line, but remain within control limits. What does this indicate?",
-    answers: [
-      "The process is perfectly stable because no points are outside control limits.",
-      "The Rule of Seven applies; the process is out of control and requires immediate investigation.",
-      "The mean line was calculated incorrectly and must be shifted upwards.",
-      "The equipment needs to be shut down and replaced immediately."
-    ],
-    correct: 1,
-    explanation: "The 'Rule of Seven' dictates that if seven or more consecutive points fall on one side of the mean, it signifies a non-random systemic issue that demands investigation."
-  },
-  {
-    topic: "Agile Frameworks",
-    question: "During a daily standup, a developer reports a major block that requires coordination with an external vendor. Who is responsible for removing this obstacle?",
-    answers: [
-      "The developer who discovered the block.",
-      "The Scrum Master.",
-      "The Product Owner.",
-      "The Project Sponsor."
-    ],
-    correct: 1,
-    explanation: "The Scrum Master is explicitly responsible for serving the team by removing systemic impediments and blockers that hinder development velocity."
-  },
-  {
     topic: "Cost Management",
-    question: "Your project has an Earned Value (EV) of $40,000 and an Actual Cost (AC) of $45,000. What is your Cost Performance Index (CPI) and project financial status?",
+    question: "Calculate the Cost Variance (CV) if Earned Value (EV) is $20,000 and Actual Cost (AC) is $25,000.",
     answers: [
-      "CPI = 1.125; The project is under budget.",
-      "CPI = 0.888; The project is over budget.",
-      "CPI = -5,000; The project has lost capital.",
-      "CPI = 1.000; The project is precisely on budget."
+      "+$5,000",
+      "-$5,000",
+      "$45,000",
+      "0.8"
     ],
     correct: 1,
-    explanation: "CPI = EV / AC ($40,000 / $45,000) = 0.888. A CPI value less than 1.0 indicates that the project is getting less value than spent, putting it over budget."
+    explanation: "Cost Variance formula is CV = EV - AC. Therefore: $20,000 - $25,000 = -$5,000 (which means the project is currently over budget)."
   },
   {
     topic: "Communications Management",
-    question: "A project team expands from 4 members to 7 members. How many new communication channels have been added to the project matrix?",
+    question: "A project team size increases from 3 to 5 members. How many total communication channels exist now?",
     answers: [
-      "3 new channels",
-      "15 new channels",
-      "21 new channels",
-      "6 new channels"
+      "2 channels",
+      "6 channels",
+      "10 channels",
+      "15 channels"
     ],
-    correct: 1,
-    explanation: "Channels formula is N(N-1)/2. For 4 players: 4(3)/2 = 6 channels. For 7 players: 7(6)/2 = 21 channels. 21 - 6 = 15 new communication channels added."
+    correct: 2,
+    explanation: "The communication channels formula is N(N-1)/2. For 5 members: 5(4)/2 = 10 total channels."
   },
   {
-    topic: "Change Control",
-    question: "A formal change request has been approved by the Change Control Board (CCB). What should the project manager do next?",
+    topic: "Cost Management",
+    question: "Calculate the Cost Performance Index (CPI) if Earned Value (EV) is $10,000 and Actual Cost (AC) is $8,000.",
     answers: [
-      "Implement the change immediately in the production environment.",
-      "Update the project baselines and communicate the approved change to stakeholders.",
-      "Ask the customer for final validation before adjusting any parameters.",
-      "Submit the change request to the development team for an impact analysis."
-    ],
-    correct: 1,
-    explanation: "Once a change is approved by the CCB, the PM must update the project baselines and document/communicate it before executing the work."
-  },
-  {
-    topic: "Earned Value",
-    question: "If your Schedule Variance (SV) is a positive value, what does this tell you about your performance parameters?",
-    answers: [
-      "The project is ahead of schedule.",
-      "The project is behind schedule.",
-      "The project is spending money faster than expected.",
-      "The project has experienced massive scope creep."
+      "1.25",
+      "0.80",
+      "$2,000",
+      "-$2,000"
     ],
     correct: 0,
-    explanation: "SV = EV - PV. A positive Schedule Variance means you have earned more progress value than originally planned for that date, indicating you are ahead of schedule."
+    explanation: "CPI formula is EV / AC. Therefore: $10,000 / $8,000 = 1.25 (a value above 1.0 means under budget performance)."
+  },
+  {
+    topic: "Scope Management",
+    question: "Definition: What is the term for uncontrolled expansion to product or project scope without adjustments to time, cost, and resources?",
+    answers: [
+      "Gold Plating",
+      "Scope Creep",
+      "Scope Baseline",
+      "Decomposition"
+    ],
+    correct: 1,
+    explanation: "Scope Creep is the specific term used for unauthorized, progressive additions to project scope without corresponding changes to timeline or funding."
+  },
+  {
+    topic: "Quality Management",
+    question: "Definition: Which quality tool uses the 80/20 rule to show that a large majority of problems are produced by a few key causes?",
+    answers: [
+      "Control Chart",
+      "Pareto Diagram",
+      "Fishbone Timeline",
+      "Scatter Plot"
+    ],
+    correct: 1,
+    explanation: "A Pareto Diagram is a histogram ordered by frequency of occurrence, illustrating the principle that 80% of defects stem from 20% of causes."
+  },
+  {
+    topic: "Schedule Management",
+    question: "Definition: What is the specific term for the sequence of dependent tasks that determines the shortest possible duration of a project?",
+    answers: [
+      "Critical Path",
+      "Lag Time",
+      "Crashing Track",
+      "Float Buffer"
+    ],
+    correct: 0,
+    explanation: "The Critical Path is defined as the longest path through a network diagram, possessing zero total float, which dictates the overall end date."
+  },
+  {
+    topic: "Earned Value Management",
+    question: "Calculate the Schedule Variance (SV) if Earned Value (EV) is $15,000 and Planned Value (PV) is $12,000.",
+    answers: [
+      "-$3,000",
+      "+$3,000",
+      "1.25",
+      "0.80"
+    ],
+    correct: 1,
+    explanation: "Schedule Variance formula is SV = EV - PV. Therefore: $15,000 - $12,000 = +$3,000 (positive means ahead of schedule)."
+  },
+  {
+    topic: "Risk Management",
+    question: "Definition: What is the term for a risk response strategy where the project team shifts the ownership and impact of a threat to a third party?",
+    answers: [
+      "Mitigate",
+      "Avoid",
+      "Transfer",
+      "Accept"
+    ],
+    correct: 2,
+    explanation: "Risk Transfer involves passing the accountability and financial impact of a risk to an outside vendor or insurance company."
+  },
+  {
+    topic: "Resource Management",
+    question: "Definition: What conflict resolution technique forces a resolution by incorporating multiple viewpoints to achieve a true win-win consensus?",
+    answers: [
+      "Smoothing",
+      "Forcing",
+      "Compromising",
+      "Collaborating"
+    ],
+    correct: 3,
+    explanation: "Collaborating (or problem-solving) combines diverse perspectives to forge an optimal, unified solution that completely satisfies all parties."
+  },
+  {
+    topic: "Schedule Management",
+    question: "Calculate the total float of a task if its Late Start (LS) is Day 14 and its Early Start (ES) is Day 9.",
+    answers: [
+      "23 days",
+      "5 days",
+      "1.5 days",
+      "0 days"
+    ],
+    correct: 1,
+    explanation: "Float formula is Float = Late Start - Early Start (LS - ES) or LF - EF. Therefore: 14 - 9 = 5 days of total float/buffer."
+  },
+  {
+    topic: "Scope Management",
+    question: "Definition: What is the approved, complete hierarchical framework used to break down the total scope of project work into manageable components?",
+    answers: [
+      "Scope Statement",
+      "Product Backlog",
+      "Work Breakdown Structure (WBS)",
+      "Requirements Matrix"
+    ],
+    correct: 2,
+    explanation: "The Work Breakdown Structure (WBS) is a deliverable-oriented hierarchical decomposition of the total scope to be executed by the project team."
+  },
+  {
+    topic: "Quality Management",
+    question: "Definition: What is the term when a team member adds extra features or functionality to a deliverable that was never explicitly requested by the client?",
+    answers: [
+      "Scope Creep",
+      "Gold Plating",
+      "Value Engineering",
+      "Quality Assurance"
+    ],
+    correct: 1,
+    explanation: "Gold Plating is intentionally adding extra features to deliverables outside the formal contract specifications, often increasing risks or costs unnecessarily."
   }
 ];
 
