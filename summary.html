@@ -3,120 +3,60 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PM Masters — Strategic Review Board</title>
+  <title>PM Masters — Solutions Inspector</title>
   <link rel="stylesheet" href="style.css" />
-  <style>
-    /* Inline additions to build cards cleanly for the breakdown dashboard */
-    .summary-card-item {
-      background: rgba(16, 18, 27, 0.9);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 18px;
-      margin-bottom: 16px;
-      text-align: left;
-    }
-    .summary-card-item.correct-border { border-color: var(--cyan); box-shadow: 0 0 10px rgba(0,243,255,0.05); }
-    .summary-card-item.wrong-border { border-color: var(--pink); box-shadow: 0 0 10px rgba(255,0,127,0.05); }
-    .badge-tag {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      font-family: 'Share Tech Mono', monospace;
-      font-weight: bold;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-    }
-    .badge-tag.correct-bg { background: rgba(0,243,255,0.15); color: var(--cyan); border: 1px solid var(--cyan); }
-    .badge-tag.wrong-bg { background: rgba(255,0,127,0.15); color: var(--pink); border: 1px solid var(--pink); }
-    .summary-q-text { color: #fff; font-size: 1rem; font-weight: 600; margin-bottom: 12px; line-height: 1.4; }
-    .choice-line { font-size: 0.85rem; color: var(--text3); margin: 6px 0; padding-left: 14px; position: relative; }
-    .choice-line.selected-target { color: var(--pink); font-weight: bold; }
-    .choice-line.correct-target { color: var(--cyan); font-weight: bold; }
-    .explanation-box {
-      margin-top: 14px;
-      padding: 10px 12px;
-      background: rgba(255,255,255,0.03);
-      border-left: 3px solid var(--purple);
-      border-radius: 0 6px 6px 0;
-      font-size: 0.85rem;
-      color: #ccc;
-      line-height: 1.4;
-    }
-  </style>
 </head>
 <body>
   <div class="bg-grid"></div>
 
-  <div class="lb-container" style="max-width: 680px; padding: 20px 15px;">
+  <div class="lb-container" style="max-width:650px;">
     <div class="lb-header">
-      <h1 class="lb-title" style="font-size: 2rem;">Match <span>Scorecard</span></h1>
-      <p class="lb-subtitle" id="summaryScoreStatsLabel">Loading individual performance stats...</p>
+      <h1 class="lb-title">Performance <span>Review</span></h1>
+      <p class="lb-subtitle">Analysis Framework & Solutions Desk</p>
     </div>
 
-    <div id="reviewLogsLayoutRootContainer"></div>
+    <div id="summaryCardsContainer"></div>
 
-    <div class="lb-actions" style="margin-top: 24px;">
-      <button class="action-btn primary" id="returnToLobbyBtn">Return to Headquarters 🏢</button>
-    </div>
+    <button class="action-btn primary" onclick="window.location.replace('index.html');" style="margin-top:20px;">Return to Main Hub 🏠</button>
   </div>
 
   <script>
-    const logDataString = localStorage.getItem('mp_lastMatchReviewDataLog');
-    const reviewDataArray = logDataString ? JSON.parse(logDataString) : [];
+    window.history.pushState(null, null, window.location.href);
+    window.onpopstate = function () { window.location.replace('index.html'); };
 
-    const rootUIContainer = document.getElementById('reviewLogsLayoutRootContainer');
-    
-    // Compute quick score statistics metrics headers
-    const correctCount = reviewDataArray.filter(i => i.wasCorrectFlag).length;
-    document.getElementById('summaryScoreStatsLabel').textContent = `You correctly mastered ${correctCount} out of ${reviewDataArray.length} strategic challenges.`;
+    const logs = JSON.parse(localStorage.getItem('mp_lastMatchReviewDataLog') || '[]');
+    const container = document.getElementById('summaryCardsContainer');
 
-    if (reviewDataArray.length === 0) {
-      rootUIContainer.innerHTML = `<p style="text-align:center; color:var(--text3); padding:40px 0;">No question review log data tracks detected for this match.</p>`;
+    if (logs.length === 0) {
+      container.innerHTML = `<p style="color:var(--text-secondary);">No review data log found. Play a round first!</p>`;
     } else {
-      rootUIContainer.innerHTML = '';
-      
-      reviewDataArray.forEach((item, index) => {
-        const itemCard = document.createElement('div');
-        itemCard.className = `summary-card-item ${item.wasCorrectFlag ? 'correct-border' : 'wrong-border'}`;
+      logs.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.className = 'review-card';
+        
+        const badgeColor = item.wasCorrectFlag ? 'var(--green)' : 'var(--pink)';
+        const badgeText = item.wasCorrectFlag ? 'CORRECT' : 'INCORRECT / TIMEOUT';
 
-        // Build HTML template strings
-        let badgeHtml = item.wasCorrectFlag 
-          ? `<div class="badge-tag correct-bg">✓ Challenge Resolved [${item.topicText}]</div>`
-          : `<div class="badge-tag wrong-bg">✗ Critical Flaw Identified [${item.topicText}]</div>`;
+        const playerAnswerText = item.playerSelectedIdx !== -1 ? item.choicesList[item.playerSelectedIdx] : "None (Timeout/No Answer)";
+        const correctAnswerText = item.choicesList[item.correctIdx];
 
-        let choicesHtml = '';
-        item.choicesList.forEach((choiceString, choiceIdx) => {
-          let modifierClass = '';
-          let markerSymbol = '▪ ';
-          
-          if (choiceIdx === item.correctIdx) {
-            modifierClass = 'correct-target';
-            markerSymbol = '✔ [Correct Option] ';
-          } else if (choiceIdx === item.playerSelectedIdx && !item.wasCorrectFlag) {
-            modifierClass = 'selected-target';
-            markerSymbol = '✘ [Your Choice] ';
-          }
-
-          choicesHtml += `<div class="choice-line ${modifierClass}">${markerSymbol}${choiceString}</div>`;
-        });
-
-        itemCard.innerHTML = `
-          ${badgeHtml}
-          <div class="summary-q-text">${index + 1}. ${item.questionText}</div>
-          <div style="margin-bottom:10px;">${choicesHtml}</div>
-          <div class="explanation-box">
-            <strong style="color:var(--purple); font-family:'Share Tech Mono';">ANALYSIS REPORT:</strong> ${item.explanationText}
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.8rem; font-weight:bold;">
+            <span style="color:var(--cyan);">${item.topicText.toUpperCase()}</span>
+            <span style="color:${badgeColor};">${badgeText}</span>
           </div>
+          <p style="font-size:1rem; font-weight:600; margin-bottom:12px; color:#fff;">${idx + 1}. ${item.questionText}</p>
+          <div style="font-size:0.85rem; margin-bottom:10px; padding:8px; border-radius:4px; background:rgba(255,0,127,0.05); border-left:3px solid var(--pink);">
+            <strong style="color:var(--text-secondary);">Your Selection:</strong> <span style="color:#fff;">${playerAnswerText}</span>
+          </div>
+          <div style="font-size:0.85rem; margin-bottom:12px; padding:8px; border-radius:4px; background:rgba(0,255,135,0.05); border-left:3px solid var(--green);">
+            <strong style="color:var(--text-secondary);">Correct Answer:</strong> <span style="color:#fff;">${correctAnswerText}</span>
+          </div>
+          <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.4; background:rgba(255,255,255,0.02); padding:10px; border-radius:4px;"><strong style="color:var(--gold);">Solution Note:</strong> ${item.explanationText}</p>
         `;
-
-        rootUIContainer.appendChild(itemCard);
+        container.appendChild(card);
       });
     }
-
-    document.getElementById('returnToLobbyBtn').addEventListener('click', () => {
-      window.location.href = 'index.html';
-    });
   </script>
 </body>
 </html>
