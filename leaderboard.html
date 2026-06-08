@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PM Masters · Standings</title>
+  <title>PM Masters — Arena Standings</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <div class="bg-grid"></div>
@@ -12,145 +14,98 @@
   <div class="lb-container">
     <div class="lb-header">
       <img src="assets/logo.png" alt="PM Masters Logo" class="brand-logo-main" style="margin: 0 auto 10px; display: block;" onerror="this.style.display='none'">
-      <h1 class="lb-title">Tournament <span>Results</span></h1>
-      <p class="lb-subtitle">Round Complete · Champion Status Unlocked</p>
+      <h1 class="lb-title">Live <span>Podium</span></h1>
+      <p class="lb-subtitle">Real-Time Tournament Tracking System</p>
     </div>
 
-    <div class="champion-card" id="championCard">
-      <div class="champion-crown">👑</div>
-      <div class="champion-avatar" id="champAvatar">🥇</div>
-      <div class="champion-name" id="champName">Evaluating...</div>
-      <div>
-        <span class="champion-score" id="champScore">0</span>
-        <span class="champion-label">/100 Points</span>
-      </div>
-      <div class="champion-badge" id="champBadge">Project Champion</div>
+    <!-- Active Live Session Leaderboard Standings Grid Module Wrapper -->
+    <div class="results-list" id="liveScoreboardDisplayContainer" style="margin-bottom: 24px;">
+      <p style="text-align:center; color:var(--text3);">Parsing cross-device live network packets...</p>
     </div>
 
-    <div class="results-list" id="resultsList"></div>
-
-    <div class="hall-section">
-      <h2 class="hall-title">🏅 All-Time High Scores (Hall of Fame)</h2>
-      <div class="hall-list" id="hallList">
-        <div class="hall-empty">No records stored yet.</div>
-      </div>
-    </div>
-
+    <!-- Navigation Command Interfaces Control Dashboard Deck -->
     <div class="lb-actions">
-      <button class="action-btn primary" id="playAgainBtn">Rematch 🔄</button>
-      <button class="action-btn secondary" id="newPlayersBtn">New Lobby 👥</button>
-      <button class="action-btn danger" id="clearBtn">Wipe History 🗑️</button>
+      <button class="action-btn primary" id="lobbyResetBtn">Reset Room & Play Again 🔄</button>
     </div>
   </div>
 
   <script>
-    const players = JSON.parse(localStorage.getItem('pmPlayers') || '[]');
-    const rawScores = JSON.parse(localStorage.getItem('pmScores') || '{}');
+    // Link Configuration Target References Mapping Context Settings Credentials
+    const firebaseConfig = {
+      apiKey: "AIzaSyDnImDBW3zqEZbBkgnQDLLmQiz_dWX5euk",
+      projectId: "pmmasters-20a3b",
+      databaseURL: "https://pmmasters-20a3b-default-rtdb.firebaseio.com"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const serverRoomRef = db.ref("pm_masters_multiplayer_session");
 
-    const Q_COUNT = 15;
-    const MAX_POTENTIAL_RAW = Q_COUNT * 9; // 7 points base + 2 points speed bonus max per question
+    const QUEST_COUNT_LIMIT = 15;
+    const SCORE_THEORETICAL_MAX_CEILING = QUEST_COUNT_LIMIT * 9; // 7 base value + 2 max bonus points
 
-    function calculatePercentage(raw) {
-      return Math.min(100, Math.round((raw / MAX_POTENTIAL_RAW) * 100));
+    function normalizeRawScoreToPercentage(rawScoreValue) {
+      return Math.min(100, Math.round((rawScoreValue / SCORE_THEORETICAL_MAX_CEILING) * 100));
     }
 
-    // Process and sort the active round standings data list array
-    const sortedStandings = players.map(name => {
-      const raw = rawScores[name] || 0;
-      return { name, raw, score: calculatePercentage(raw) };
-    }).sort((a, b) => b.raw - a.raw);
-
-    // Build the scoreboard interface elements
-    if (sortedStandings.length > 0) {
-      const champ = sortedStandings[0];
-      document.getElementById('champAvatar').textContent = champ.name.substring(0,2).toUpperCase();
-      document.getElementById('champName').textContent = champ.name;
-      document.getElementById('champScore').textContent = champ.score;
-
-      // Assign custom functional dynamic badges based on score achievements
-      const badgeEl = document.getElementById('champBadge');
-      if (champ.score >= 85) { badgeEl.textContent = "Elite Program Director 🧠"; }
-      else if (champ.score >= 65) { badgeEl.textContent = "Senior Scrum Master ⚔️"; }
-      else { badgeEl.textContent = "Project Coordinator 📋"; }
-
-      // Build secondary roster items below #1
-      const rosterContainer = document.getElementById('resultsList');
-      rosterContainer.innerHTML = '';
+    // Open an active streaming snapshot pipe directly to the database room
+    serverRoomRef.child('players').on('value', (snapshot) => {
+      const recordsMap = snapshot.val() || {};
       
-      for (let i = 1; i < sortedStandings.length; i++) {
-        const p = sortedStandings[i];
-        const row = document.createElement('div');
-        row.className = 'res-row';
-        row.innerHTML = `
-          <div class="res-player">
-            <span class="res-rank">#${i + 1}</span>
-            <span class="res-name">${p.name}</span>
-          </div>
-          <span class="res-score">${p.score}%</span>
-        `;
-        rosterContainer.appendChild(row);
-      }
-    }
+      // Map dictionary objects seamlessly straight into sorted matrix arrays structures
+      const compiledSortedRoster = Object.keys(recordsMap).map(keyId => {
+        const item = recordsMap[keyId];
+        return {
+          id: keyId,
+          name: item.name,
+          raw: item.score || 0,
+          percentage: normalizeRawScoreToPercentage(item.score || 0),
+          status: item.status || "Active"
+        };
+      }).sort((a, b) => b.raw - a.raw);
 
-    // Historical Hall of Fame operational logic
-    function registerHistoricalRecord(currentResults) {
-      let archive = JSON.parse(localStorage.getItem('pmHallOfFame') || '[]');
-      
-      currentResults.forEach(entry => {
-        archive.push({
-          name: entry.name,
-          score: entry.score,
-          date: new Date().toLocaleDateString(undefined, {month: 'short', day: 'numeric'})
-        });
-      });
+      const targetUIContainer = document.getElementById('liveScoreboardDisplayContainer');
+      targetUIContainer.innerHTML = '';
 
-      // Sort globally by score desc and cap file rows length output capacity to 6 slots
-      archive.sort((a, b) => b.score - a.score);
-      archive = archive.slice(0, 6);
-      
-      localStorage.setItem('pmHallOfFame', JSON.stringify(archive));
-      renderHistoricalLayout(archive);
-    }
-
-    function renderHistoricalLayout(archive) {
-      const container = document.getElementById('hallList');
-      if (!archive || archive.length === 0) {
-        container.innerHTML = `<div class="hall-empty">No legendary records logged yet.</div>`;
+      if (compiledSortedRoster.length === 0) {
+        targetUIContainer.innerHTML = `<p style="text-align:center; color:var(--text3);">No active combatants detected.</p>`;
         return;
       }
 
-      container.innerHTML = archive.map((item, idx) => `
-        <div class="hall-row">
-          <div><span style="color:var(--gold); margin-right:8px;">#${idx+1}</span><span class="hall-name">${item.name}</span></div>
-          <div style="display:flex; gap:16px;">
-            <span style="color:var(--text3); font-size:0.75rem;">${item.date}</span>
-            <span class="hall-score">${item.score}%</span>
+      compiledSortedRoster.forEach((playerNode, index) => {
+        const rankPrefixString = (index === 0) ? "🥇" : (index === 1) ? "🥈" : (index === 2) ? "🥉" : `#${index + 1}`;
+        const inlineStatusMarkerBadge = (playerNode.status === "Finished Match") 
+          ? `<span style="color:var(--cyan); font-size:0.75rem; font-family:'Share Tech Mono'; margin-left:10px;">[DONE]</span>` 
+          : `<span style="color:var(--pink); font-size:0.75rem; font-family:'Share Tech Mono'; margin-left:10px;">(${playerNode.status})</span>`;
+
+        // Render rows using consistent style systems matching design layouts
+        const rowDivElement = document.createElement('div');
+        rowDivElement.className = 'res-row';
+        if (index === 0) {
+          rowDivElement.style.border = "1px solid var(--gold)";
+          rowDivElement.style.boxShadow = "0 0 15px rgba(255, 215, 0, 0.15)";
+        }
+
+        rowDivElement.innerHTML = `
+          <div class="res-player">
+            <span class="res-rank" style="color:${index === 0 ? 'var(--gold)' : 'var(--text3)'}; font-weight:700;">${rankPrefixString}</span>
+            <span class="res-name">${playerNode.name} ${inlineStatusMarkerBadge}</span>
           </div>
-        </div>
-      `).join('');
-    }
-
-    // Execute database pipeline updates upon layout initialization
-    registerHistoricalRecord(sortedStandings);
-
-    // Event listener configurations
-    document.getElementById('playAgainBtn').addEventListener('click', () => {
-      localStorage.removeItem('pmScores');
-      localStorage.removeItem('pmCurrentPlayer');
-      window.location.href = 'game.html';
+          <span class="res-score" style="color:${index === 0 ? 'var(--gold)' : 'var(--cyan)'}">${playerNode.percentage}%</span>
+        `;
+        targetUIContainer.appendChild(rowDivElement);
+      });
     });
 
-    document.getElementById('newPlayersBtn').addEventListener('click', () => {
-      localStorage.removeItem('pmScores');
-      localStorage.removeItem('pmCurrentPlayer');
-      localStorage.removeItem('pmPlayers');
-      window.location.href = 'index.html';
-    });
-
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      if (confirm('Are you sure you want to completely delete the Hall of Fame historical records?')) {
-        localStorage.removeItem('pmHallOfFame');
-        renderHistoricalLayout([]);
+    // Resetting pushes the whole match server data tree state parameters back to blank lobby variables
+    document.getElementById('lobbyResetBtn').addEventListener('click', () => {
+      if (confirm("This cleans out the entire current lobby room data. Ready to start a fresh multiplayer round?")) {
+        serverRoomRef.set({
+          gameState: "lobby",
+          players: {}
+        }).then(() => {
+          localStorage.clear();
+          window.location.href = 'index.html';
+        });
       }
     });
   </script>
