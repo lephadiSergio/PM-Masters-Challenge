@@ -1,27 +1,172 @@
 const STUDY_CONCEPTS_BANK = [
   {
-    topic: "Project Definition",
-    question: "What is the fundamental definition of a project?",
+    topic: "System of Systems",
+    question: "Based on the Maier and De Laurentis characteristics, which of the following is a defining feature of a \"System of Systems\" (SoS) that a Large/Complex System does NOT necessarily possess?",
     answers: [
-      "A continuous, repetitive process to produce standard goods.",
-      "A temporary endeavor undertaken to create a unique product, service, or result.",
-      "The ongoing business-as-usual (BAU) operations of an organization.",
-      "A set of processes aimed at maximizing long-term shareholder wealth."
+      "Elements are interconnected and interdependent.",
+      "It produces emergent properties and system-level results.",
+      "Managerial and Operational Independence of the constituent elements.",
+      "It is composed of hardware, software, and human elements.",
+      "It has a defined physical boundary."
     ],
-    correct: 1,
-    explanation: "A project is temporary and unique, unlike ongoing continuous business-as-usual (BAU) operations."
+    correct: 2,
+    explanation: "Large/Complex systems (like the human body) have interconnected elements and emergent properties, but they lack the Operational and Managerial Independence of their constituent elements. A System of Systems requires that components can operate and be managed independently."
+  },
+  {
+    topic: "Systems Thinking",
+    question: "According to Systems Thinking principles, which of the following is a basic skill or behaviour required to solve complex problems?",
+    answers: [
+      "Accounting Analysis",
+      "Closed-mindedness to alternative solutions",
+      "Abstract Thinking",
+      "Component-level micro-management",
+      "Focusing purely on linear, single-cause-and-effect relationships"
+    ],
+    correct: 2,
+    explanation: "Abstract Thinking is a core basic skill associated with Systems Thinking. Accounting Analysis and closed-mindedness are directly contrary to holistic problem solving."
+  },
+  {
+    topic: "Cognitive Frameworks",
+    question: "In the context of Systems Thinking and De Bono’s Six Thinking Hats, which hat is correctly matched with its description?",
+    answers: [
+      "White Hat - Focuses on intuition, feelings, and gut instinct.",
+      "Red Hat - Focuses on information, facts, and figures.",
+      "Black Hat - Focuses on creative thinking and alternative solutions.",
+      "Green Hat - Focuses on risks, problems, and safety.",
+      "Blue Hat - Focuses on process control, the big picture, agenda, and time management."
+    ],
+    correct: 4,
+    explanation: "Based on De Bono's Six Thinking Hats: White is information/facts, Red is feelings, Black is risks/safety, Green is creativity, and Blue manages process control and the big picture."
   },
   {
     topic: "Systems Engineering",
-    question: "According to the International Council on Systems Engineering (INCOSE), Systems Engineering is defined as:",
+    question: "Based on the INCOSE definition, which of the following statements does NOT accurately describe Systems Engineering?",
     answers: [
-      "A purely technical discipline focusing solely on software development.",
-      "An interdisciplinary approach and means to enable the realization of successful systems.",
-      "The process of managing financial budgets for large-scale construction.",
-      "A methodical approach for retiring obsolete systems only."
+      "It is an interdisciplinary approach to enable the realization of successful systems.",
+      "It integrates all disciplines and specialty groups into a team effort.",
+      "It proceeds from concept to production to operation.",
+      "It focuses purely on independent component design without regard for environmental integration.",
+      "It considers both business and technical needs to provide a quality product."
+    ],
+    correct: 3,
+    explanation: "Systems Engineering heavily emphasizes holism and environmental integration. Focusing purely on independent component isolation is the exact antithesis of the discipline."
+  },
+  {
+    topic: "Systems Classification",
+    question: "Consider the following: 1) A group of people at a bus shelter, 2) A baked chocolate chip cookie, 3) An Organisation (with employees, departments, and IT software). Which of the above can be formally classified as a true \"System\"?",
+    answers: [
+      "1 and 2",
+      "3 only",
+      "1 and 3",
+      "2 and 3",
+      "All of the above"
     ],
     correct: 1,
-    explanation: "INCOSE defines Systems Engineering as an interdisciplinary approach to realize and manage successful, complex systems over their life cycles."
+    explanation: "An organization has interacting elements with a collective functional purpose and emergent results. A group of people at a shelter are unlinked by interdependent roles, and a baked cookie performs no processing or transformation functions."
+  },
+  {
+    topic: "Hierarchy Architecture",
+    question: "A system that requires you to go 3 or more levels down its hierarchy to encounter real atomic parts, and typically has more than 90 constituent elements, is classified as a:",
+    answers: [
+      "Simple System",
+      "Complicated System",
+      "Complex System",
+      "Chaotic/Anarchy System",
+      "Hard System"
+    ],
+    correct: 2,
+    explanation: "Based on hierarchy depth and element count frameworks, a Complex System scales 3+ levels deep with structural density (>60-90 elements), like an automobile."
+  },
+  {
+    topic: "System Topology",
+    question: "Which of the following best describes a \"Soft System\"?",
+    answers: [
+      "It is deterministic, highly physical, and easy to model mathematically.",
+      "It consists purely of mechanical and electrical components with no humans.",
+      "It is people-intensive, management-oriented, and has multifaceted, complex objectives.",
+      "It operates in a vacuum with absolutely no environmental interaction.",
+      "It is an anarchy system that is neither knowable nor predictable, like traffic in Lagos."
+    ],
+    correct: 2,
+    explanation: "Hard systems are deterministic and physical (like a structural bridge). Soft systems are explicitly human-centric, management-driven, and possess highly multifaceted, ambiguous goals."
+  },
+  {
+    topic: "Systems Architecture",
+    question: "In \"The Poached Egg\" Conceptual Architecture Diagram used for Systems Definition, what does the \"Egg White\" represent?",
+    answers: [
+      "The System-of-Interest (SoI)",
+      "The internal Sub-systems",
+      "The Sibling Systems with which the SoI must interface",
+      "The Containing System",
+      "3rd Party Influencers outside the environment"
+    ],
+    correct: 2,
+    explanation: "In D.K. Hitchins' framework, the core Yolk is the System-of-Interest, the Sub-systems reside inside the Yolk, the surrounding Egg White maps the Sibling Systems, and the outer Pan is the Containing System."
+  },
+  {
+    topic: "Functional Requirements",
+    question: "When defining a system's function, it should be expressed as a solution-neutral statement to foster creativity. Which of the following is an example of a solution-neutral statement?",
+    answers: [
+      "Microwaving",
+      "Telephoning",
+      "Trucking",
+      "Cargo transporting",
+      "Brainstorming"
+    ],
+    correct: 3,
+    explanation: "Solution-neutral syntax clarifies *what* must be done rather than *how*. 'Cargo transporting' is neutral; 'Trucking' prematurely forces the design vector to use physical trucks."
+  },
+  {
+    topic: "Emergent Properties",
+    question: "Which of the following statements is TRUE regarding \"Emergent Properties\" in a system?",
+    answers: [
+      "They are the specific, isolated properties of the individual atomic parts.",
+      "They are always completely predictable and desired by the engineers.",
+      "They are the consequence of holism and interaction, which only become apparent when the system is placed in different environments.",
+      "They remain completely static and unchanging throughout the system's entire \"Cradle to Grave\" lifecycle.",
+      "They only exist in Chaotic/Anarchy systems."
+    ],
+    correct: 2,
+    explanation: "Emergent properties stem directly from system holism and component interactions. They cannot be isolated to individual standalone pieces and can change dynamically based on environments."
+  },
+  {
+    topic: "System Taxonomy",
+    question: "Which of the following is an example of a true System of Systems (SoS)?",
+    answers: [
+      "A swarm of 500 light-show drones controlled simultaneously by one central computer.",
+      "The human body (e.g., the nervous and digestive systems operating together).",
+      "A smartphone loaded with independently managed and operated apps (like WhatsApp and Facebook).",
+      "A single passenger jet airplane.",
+      "A pile of rocks."
+    ],
+    correct: 2,
+    explanation: "A smartphone with apps is an SoS because the host hardware and individual software apps retain distinct managerial and operational lifecycles. Drones linked to a central controller lack individual managerial independence."
+  },
+  {
+    topic: "Boundary Architecture",
+    question: "When defining the system boundary for the NASA Shuttle Radar Topography Mission (SRTM) from the perspective of the Data Collector (NASA), which elements sit INSIDE the primary System-of-Interest boundary?",
+    answers: [
+      "The Urban Designer (Customer) and their local PC.",
+      "The Satellite and the Image Processing System.",
+      "The entire Earth's atmosphere.",
+      "The 3rd party regulatory influencers only.",
+      "The external Data Library network only."
+    ],
+    correct: 1,
+    explanation: "Boundaries shift depending on perspective. For the Data Collector role, the physical scope boundaries encapsulate the Satellite and Image Processing pipelines, while the end Customer is positioned outside."
+  },
+  {
+    topic: "Scope Engineering",
+    question: "What is the primary purpose of defining the \"Containing System\" during the Systems Definition phase?",
+    answers: [
+      "To detail the exact software code used in the system's micro-processors.",
+      "To calculate the Expected Time (te) of the project schedule.",
+      "To develop an understanding of the overarching environment in which the System-of-Interest and its sibling systems operate.",
+      "To identify the internal sub-components of the lowest Work Breakdown Structure (WBS) work package.",
+      "To create a chronological project plan."
+    ],
+    correct: 2,
+    explanation: "Mapping the Containing System (the Pan) provides necessary structural exposure to the overarching environmental parameters that govern the System-of-Interest, neutralizing the risks of requirements drift."
   }
 ];
 
@@ -304,12 +449,10 @@ function seedShuffleArray(array, seedString) {
   let tempArray = [...array];
   let seed = 0;
   
-  // Create a numeric value out of the lobby name string
   for (let i = 0; i < seedString.length; i++) {
     seed += seedString.charCodeAt(i);
   }
 
-  // Custom deterministic pseudo-random shuffler (Fisher-Yates style using linear congruential generator)
   for (let i = tempArray.length - 1; i > 0; i--) {
     seed = (seed * 9301 + 49297) % 233280;
     let rnd = seed / 233280;
@@ -329,6 +472,5 @@ function getSelectedLobbyDataset(mode, tier, lobbyNodeName = "default_lobby") {
   else if (tier === "level3") baseQuestions = [...EXAM_LEVEL_3_BANK];
   else baseQuestions = [...EXAM_LEVEL_1_BANK];
 
-  // Shuffles the entire active bank completely while ensuring every player sees the matching sequence
   return seedShuffleArray(baseQuestions, lobbyNodeName);
 }
