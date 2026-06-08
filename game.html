@@ -56,7 +56,7 @@
       if (tier === "level3") CLOCK_TIME_LIMIT_MAX = 300;
     }
 
-    let questionBankArray = getSelectedLobbyDataset(mode, tier);
+    let questionBankArray = getSelectedLobbyDataset(mode, tier, activeLobbyNode);
     let currentQuestionIdx = 0;
     let localAccumulatedScore = 0;
     let turnCountDownTimerInterval = null;
