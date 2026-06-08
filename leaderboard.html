@@ -18,12 +18,10 @@
       <p class="lb-subtitle">Real-Time Tournament Tracking System</p>
     </div>
 
-    <!-- Active Live Session Leaderboard Standings Grid Module Wrapper -->
     <div class="results-list" id="liveScoreboardDisplayContainer" style="margin-bottom: 24px;">
       <p style="text-align:center; color:var(--text3);">Parsing cross-device live network packets...</p>
     </div>
 
-    <!-- Navigation Command Interfaces Control Dashboard Deck -->
     <div class="lb-actions">
       <button class="action-btn primary" id="lobbyResetBtn">Reset Room & Play Again 🔄</button>
     </div>
@@ -41,7 +39,7 @@
     const serverRoomRef = db.ref("pm_masters_multiplayer_session");
 
     const QUEST_COUNT_LIMIT = 15;
-    const SCORE_THEORETICAL_MAX_CEILING = QUEST_COUNT_LIMIT * 9; // 7 base value + 2 max bonus points
+    const SCORE_THEORETICAL_MAX_CEILING = QUEST_COUNT_LIMIT * 9; // 7 base value + 2 max speed bonus points
 
     function normalizeRawScoreToPercentage(rawScoreValue) {
       return Math.min(100, Math.round((rawScoreValue / SCORE_THEORETICAL_MAX_CEILING) * 100));
@@ -51,12 +49,12 @@
     serverRoomRef.child('players').on('value', (snapshot) => {
       const recordsMap = snapshot.val() || {};
       
-      // Map dictionary objects seamlessly straight into sorted matrix arrays structures
+      // Map database items directly into a sorted array
       const compiledSortedRoster = Object.keys(recordsMap).map(keyId => {
         const item = recordsMap[keyId];
         return {
           id: keyId,
-          name: item.name,
+          name: item.name || "Unknown Gladiator",
           raw: item.score || 0,
           percentage: normalizeRawScoreToPercentage(item.score || 0),
           status: item.status || "Active"
@@ -72,25 +70,30 @@
       }
 
       compiledSortedRoster.forEach((playerNode, index) => {
+        // Dynamic podium styling markers
         const rankPrefixString = (index === 0) ? "🥇" : (index === 1) ? "🥈" : (index === 2) ? "🥉" : `#${index + 1}`;
+        
+        // Live status indicator strings to show who's actively answering questions vs who's finished
         const inlineStatusMarkerBadge = (playerNode.status === "Finished Match") 
           ? `<span style="color:var(--cyan); font-size:0.75rem; font-family:'Share Tech Mono'; margin-left:10px;">[DONE]</span>` 
           : `<span style="color:var(--pink); font-size:0.75rem; font-family:'Share Tech Mono'; margin-left:10px;">(${playerNode.status})</span>`;
 
-        // Render rows using consistent style systems matching design layouts
+        // Create the row element dynamically using your global style layout variables
         const rowDivElement = document.createElement('div');
         rowDivElement.className = 'res-row';
+        
+        // Highlight 1st Place Champion row uniquely
         if (index === 0) {
           rowDivElement.style.border = "1px solid var(--gold)";
-          rowDivElement.style.boxShadow = "0 0 15px rgba(255, 215, 0, 0.15)";
+          rowDivElement.style.boxShadow = "0 0 15px rgba(255, 215, 0, 0.2)";
         }
 
         rowDivElement.innerHTML = `
           <div class="res-player">
-            <span class="res-rank" style="color:${index === 0 ? 'var(--gold)' : 'var(--text3)'}; font-weight:700;">${rankPrefixString}</span>
-            <span class="res-name">${playerNode.name} ${inlineStatusMarkerBadge}</span>
+            <span class="res-rank" style="color:${index === 0 ? 'var(--gold)' : 'var(--text3)'}; font-weight:700; margin-right:12px;">${rankPrefixString}</span>
+            <span class="res-name" style="color:#fff; font-weight:600;">${playerNode.name} ${inlineStatusMarkerBadge}</span>
           </div>
-          <span class="res-score" style="color:${index === 0 ? 'var(--gold)' : 'var(--cyan)'}">${playerNode.percentage}%</span>
+          <span class="res-score" style="color:${index === 0 ? 'var(--gold)' : 'var(--cyan)'}; font-weight:700;">${playerNode.percentage}%</span>
         `;
         targetUIContainer.appendChild(rowDivElement);
       });
