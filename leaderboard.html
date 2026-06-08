@@ -8,16 +8,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 </head>
-<body><!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PM Masters — Arena Standings</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-</head>
 <body>
   <div class="bg-grid"></div>
 
@@ -51,8 +41,8 @@
     const db = firebase.database();
     const serverRoomRef = db.ref("pm_masters_multiplayer_session");
 
-    // Max theoretical calculation criteria markers tracking lines
-    const SCORE_THEORETICAL_MAX_CEILING = 12 * 9; 
+    // Math metrics calibrated explicitly for 10 short questions
+    const SCORE_THEORETICAL_MAX_CEILING = 10 * 9; 
 
     function normalizeRawScoreToPercentage(rawScoreValue) {
       return Math.min(100, Math.round((rawScoreValue / SCORE_THEORETICAL_MAX_CEILING) * 100));
@@ -107,114 +97,6 @@
 
     document.getElementById('goToSummaryPageBtn').addEventListener('click', () => {
       window.location.href = 'summary.html';
-    });
-
-    document.getElementById('lobbyResetBtn').addEventListener('click', () => {
-      if (confirm("This cleans out the entire current lobby room data. Ready to start a fresh multiplayer round?")) {
-        serverRoomRef.set({
-          gameState: "lobby",
-          players: {}
-        }).then(() => {
-          localStorage.clear();
-          window.location.href = 'index.html';
-        });
-      }
-    });
-  </script>
-</body>
-</html>
-  <div class="bg-grid"></div>
-
-  <div class="lb-container">
-    <div class="lb-header">
-      <img src="assets/logo.png" alt="PM Masters Logo" class="brand-logo-main" style="margin: 0 auto 10px; display: block;" onerror="this.style.display='none'">
-      <h1 class="lb-title">Live <span>Podium</span></h1>
-      <p class="lb-subtitle">Real-Time Tournament Tracking System</p>
-    </div>
-
-    <!-- Active Live Session Leaderboard Standings Grid Module Wrapper -->
-    <div class="results-list" id="liveScoreboardDisplayContainer" style="margin-bottom: 24px;">
-      <p style="text-align:center; color:var(--text3);">Parsing cross-device live network packets...</p>
-    </div>
-
-    <!-- Navigation Command Interfaces Control Dashboard Deck -->
-    <div class="lb-actions">
-      <button class="action-btn primary" id="lobbyResetBtn">Reset Room & Play Again 🔄</button>
-    </div>
-  </div>
-
-  <script>
-    const myPlayerKey = localStorage.getItem('mp_myPlayerKey');
-    const myPlayerName = localStorage.getItem('mp_myPlayerName');
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyDnImDBW3zqEZbBkgnQDLLmQiz_dWX5euk",
-      projectId: "pmmasters-20a3b",
-      databaseURL: "https://pmmasters-20a3b-default-rtdb.firebaseio.com"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const serverRoomRef = db.ref("pm_masters_multiplayer_session");
-
-    const QUEST_COUNT_LIMIT = 15;
-    const SCORE_THEORETICAL_MAX_CEILING = QUEST_COUNT_LIMIT * 9; 
-
-    function normalizeRawScoreToPercentage(rawScoreValue) {
-      return Math.min(100, Math.round((rawScoreValue / SCORE_THEORETICAL_MAX_CEILING) * 100));
-    }
-
-    serverRoomRef.child('players').on('value', (snapshot) => {
-      const recordsMap = snapshot.val() || {};
-      
-      const compiledSortedRoster = Object.keys(recordsMap).map(keyId => {
-        const item = recordsMap[keyId];
-        // FIX: If network drops the name property, fall back to our cached user identities
-        let cleanName = item.name;
-        if (!cleanName) {
-          cleanName = (keyId === myPlayerKey) ? myPlayerName : "Gladiator Connected";
-        }
-
-        return {
-          id: keyId,
-          name: cleanName,
-          raw: item.score || 0,
-          percentage: normalizeRawScoreToPercentage(item.score || 0),
-          status: item.status || "Active"
-        };
-      }).sort((a, b) => b.raw - a.raw);
-
-      const targetUIContainer = document.getElementById('liveScoreboardDisplayContainer');
-      targetUIContainer.innerHTML = '';
-
-      if (compiledSortedRoster.length === 0) {
-        targetUIContainer.innerHTML = `<p style="text-align:center; color:var(--text3);">No active combatants detected.</p>`;
-        return;
-      }
-
-      compiledSortedRoster.forEach((playerNode, index) => {
-        const rankPrefixString = (index === 0) ? "🥇" : (index === 1) ? "🥈" : (index === 2) ? "🥉" : `#${index + 1}`;
-        
-        const inlineStatusMarkerBadge = (playerNode.status === "Finished Match") 
-          ? `<span style="color:var(--cyan); font-size:0.75rem; font-family:'Share Tech Mono'; margin-left:10px;">[DONE]</span>` 
-          : `<span style="color:var(--pink); font-size:0.75rem; font-family:'Share Tech Mono'; margin-left:10px;">(${playerNode.status})</span>`;
-
-        const rowDivElement = document.createElement('div');
-        rowDivElement.className = 'res-row';
-        
-        if (index === 0) {
-          rowDivElement.style.border = "1px solid var(--gold)";
-          rowDivElement.style.boxShadow = "0 0 15px rgba(255, 215, 0, 0.2)";
-        }
-
-        rowDivElement.innerHTML = `
-          <div class="res-player">
-            <span class="res-rank" style="color:${index === 0 ? 'var(--gold)' : 'var(--text3)'}; font-weight:700; margin-right:12px;">${rankPrefixString}</span>
-            <span class="res-name" style="color:#fff; font-weight:600;">${playerNode.name} ${inlineStatusMarkerBadge}</span>
-          </div>
-          <span class="res-score" style="color:${index === 0 ? 'var(--gold)' : 'var(--cyan)'}; font-weight:700;">${playerNode.percentage}%</span>
-        `;
-        targetUIContainer.appendChild(rowDivElement);
-      });
     });
 
     document.getElementById('lobbyResetBtn').addEventListener('click', () => {
