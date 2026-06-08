@@ -11,35 +11,24 @@
 <body>
   <div class="bg-grid"></div>
 
-  <div class="game-wrapper" id="gameWrapper">
+  <div class="game-wrapper">
     <div class="game-topbar">
-      <div class="current-player-pill">
-        <div class="cp-avatar" id="myAvatarIcon">ME</div>
-        <div class="cp-name" id="myNameLabel">Player Name</div>
-      </div>
-      <img src="assets/logo.png" alt="PM" class="brand-logo-hud" onerror="this.style.display='none'">
-      <div class="game-progress-info">
-        <span id="questionProgressText">Task Queue</span>
-      </div>
-      <div class="score-pill">
-        <span class="score-label">LIVE POINTS</span>
-        <span class="score-val" id="localScoreLabel">0</span>
-      </div>
+      <div id="myNameLabel" style="color:var(--cyan);">Player</div>
+      <div id="questionProgressText" style="color:var(--text-secondary);">Task Queue</div>
+      <div class="score-pill" id="localScoreLabel">0</div>
     </div>
 
     <div class="timer-track"><div class="timer-fill" id="timerFillBar"></div></div>
 
-    <div class="q-card" id="qCard">
+    <div class="q-card">
       <div class="q-topic" id="qTopicText">Topic</div>
-      <div class="q-number" id="qNumberLabel">Investigation Unit</div>
-      <div class="q-text" id="qBodyParagraphText">Loading active vectors...</div>
+      <div class="q-text" id="qBodyParagraphText">Loading vectors...</div>
       <div class="answers-grid" id="answersLayoutGrid"></div>
     </div>
   </div>
 
   <script src="data/questions.js"></script>
   <script>
-    // BACK BUTTON TRAP: Forces exit if back buttons are triggered mid-game
     window.history.pushState(null, null, window.location.href);
     window.onpopstate = function () { window.location.replace('index.html'); };
 
@@ -60,12 +49,11 @@
     const db = firebase.database();
     const serverRoomRef = db.ref(`pm_masters_multiplayer_session/${activeLobbyNode}`);
 
-    // Dynamic Timer Allocator mapping parameters
-    let CLOCK_TIME_LIMIT_MAX = 25; // Default standard concept timer
+    let CLOCK_TIME_LIMIT_MAX = 25; 
     if (mode === "exam") {
-      if (tier === "level1") CLOCK_TIME_LIMIT_MAX = 90;  // 1 min 30s
-      if (tier === "level2") CLOCK_TIME_LIMIT_MAX = 180; // 3 min
-      if (tier === "level3") CLOCK_TIME_LIMIT_MAX = 300; // 5 min
+      if (tier === "level1") CLOCK_TIME_LIMIT_MAX = 90;
+      if (tier === "level2") CLOCK_TIME_LIMIT_MAX = 180;
+      if (tier === "level3") CLOCK_TIME_LIMIT_MAX = 300;
     }
 
     let questionBankArray = getSelectedLobbyDataset(mode, tier);
@@ -85,25 +73,18 @@
       if (currentQuestionIdx >= questionBankArray.length) {
         clearInterval(turnCountDownTimerInterval);
         localStorage.setItem('mp_lastMatchReviewDataLog', JSON.stringify(localGamePlayReviewLog));
-
         serverRoomRef.child('players').child(myPlayerKey).update({
-          name: myPlayerName,
-          status: "Finished Match"
-        }).then(() => {
-          window.location.replace('leaderboard.html');
-        });
+          name: myPlayerName, status: "Finished Match"
+        }).then(() => { window.location.replace('leaderboard.html'); });
         return;
       }
 
       questionAnswerLockFlag = false;
       const q = questionBankArray[currentQuestionIdx];
-
-      document.getElementById('myAvatarIcon').textContent = myPlayerName.substring(0,2).toUpperCase();
       document.getElementById('myNameLabel').textContent = myPlayerName;
-      document.getElementById('questionProgressText').textContent = `Task ${currentQuestionIdx + 1} / ${questionBankArray.length}`;
-      document.getElementById('localScoreLabel').textContent = localAccumulatedScore;
+      document.getElementById('questionProgressText').textContent = `Q: ${currentQuestionIdx + 1}/${questionBankArray.length}`;
+      document.getElementById('localScoreLabel').textContent = `PTS: ${localAccumulatedScore}`;
       document.getElementById('qTopicText').textContent = q.topic;
-      document.getElementById('qNumberLabel').textContent = `Challenge Task ${currentQuestionIdx + 1}`;
       document.getElementById('qBodyParagraphText').textContent = q.question;
 
       const gridContainer = document.getElementById('answersLayoutGrid');
@@ -123,22 +104,13 @@
     function kickstartClockCountdownTracker() {
       clearInterval(turnCountDownTimerInterval);
       clockSecondsTimeRemaining = CLOCK_TIME_LIMIT_MAX;
-      syncCountdownTimerBarUI();
-
       turnCountDownTimerInterval = setInterval(() => {
-        clockSecondsTimeRemaining -= 0.2;
-        syncCountdownTimerBarUI();
-
+        clockSecondsTimeRemaining -= 0.5;
+        document.getElementById('timerFillBar').style.width = `${(clockSecondsTimeRemaining / CLOCK_TIME_LIMIT_MAX) * 100}%`;
         if (clockSecondsTimeRemaining <= 0) {
-          clearInterval(turnCountDownTimerInterval);
-          validateSelectedChoiceOption(-1);
+          clearInterval(turnCountDownTimerInterval); validateSelectedChoiceOption(-1);
         }
-      }, 200);
-    }
-
-    function syncCountdownTimerBarUI() {
-      const percentageLeft = (clockSecondsTimeRemaining / CLOCK_TIME_LIMIT_MAX) * 100;
-      document.getElementById('timerFillBar').style.width = `${percentageLeft}%`;
+      }, 500);
     }
 
     function validateSelectedChoiceOption(selectedIdx) {
@@ -148,23 +120,16 @@
 
       const q = questionBankArray[currentQuestionIdx];
       const isCorrect = (selectedIdx === q.correct);
-      
-      if (isCorrect) { localAccumulatedScore += 10; }
+      if (isCorrect) localAccumulatedScore += 10;
 
       localGamePlayReviewLog.push({
-        questionText: q.question,
-        topicText: q.topic,
-        choicesList: q.answers,
-        correctIdx: q.correct,
-        playerSelectedIdx: selectedIdx,
-        explanationText: q.explanation,
-        wasCorrectFlag: isCorrect
+        questionText: q.question, topicText: q.topic, choicesList: q.answers,
+        correctIdx: q.correct, playerSelectedIdx: selectedIdx,
+        explanationText: q.explanation, wasCorrectFlag: isCorrect
       });
 
       serverRoomRef.child('players').child(myPlayerKey).update({
-        name: myPlayerName,
-        score: localAccumulatedScore,
-        status: `Answering Q${currentQuestionIdx + 2}`
+        score: localAccumulatedScore, status: `Answering Q${currentQuestionIdx + 2}`
       });
 
       currentQuestionIdx++;
