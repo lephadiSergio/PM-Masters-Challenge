@@ -1,94 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PM Masters Challenge</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container" id="lobbyBox">
-    <!-- 🖼️ LOGO INSERTED HERE -->
-    <img src="assets/logo.png" alt="PM Masters Logo" class="game-logo">
-    
-    <h1>PM Masters <span>Challenge</span></h1>
-    <p>Real-Time PMBOK Exam Simulator</p>
+  <div class="bg-grid"></div>
+  <div class="particles" id="particles"></div>
 
-    <div id="joinSection">
-      <input type="text" id="playerName" placeholder="Enter your name..." maxlength="15">
-      <br>
-      <button class="btn" id="joinBtn">Join Lobby</button>
+  <div class="landing-container">
+    <div class="logo-area">
+      <img src="assets/logo.png" alt="PM Masters Crest" class="brand-logo-main" onerror="this.style.display='none'">
+      <h1 class="game-title">PM Masters<span class="accent">Challenge</span></h1>
+      <p class="subtitle">PMBOK Chapters 1–12 · Tournament Stadium</p>
     </div>
 
-    <div id="waitingSection" style="display: none;">
-      <h2>Players in Lobby: <span id="playerCount">1</span></h2>
-      <div class="player-list" id="playerList"></div>
-      <button class="btn" id="startBtn" disabled>Waiting for players...</button>
+    <div class="player-setup-card">
+      <h2 class="setup-title">Register Squad <span class="player-count-badge" id="playerCountBadge">0 / 5</span></h2>
+      
+      <div class="player-inputs" id="playerInputs">
+        <div class="player-row" data-player="1">
+          <div class="player-avatar">P1</div>
+          <input type="text" class="player-input" placeholder="Player 1 name..." maxlength="14" />
+        </div>
+        <div class="player-row" data-player="2">
+          <div class="player-avatar">P2</div>
+          <input type="text" class="player-input" placeholder="Player 2 name..." maxlength="14" />
+        </div>
+        <div class="player-row optional-row" data-player="3">
+          <div class="player-avatar">P3</div>
+          <input type="text" class="player-input" placeholder="Player 3 (Optional)..." maxlength="14" />
+        </div>
+        <div class="player-row optional-row" data-player="4">
+          <div class="player-avatar">P4</div>
+          <input type="text" class="player-input" placeholder="Player 4 (Optional)..." maxlength="14" />
+        </div>
+        <div class="player-row optional-row" data-player="5">
+          <div class="player-avatar">P5</div>
+          <input type="text" class="player-input" placeholder="Player 5 (Optional)..." maxlength="14" />
+        </div>
+      </div>
+
+      <div class="setup-info">
+        <div class="info-chip">🎯 15 Random Questions</div>
+        <div class="info-chip">⏰ 20s Turn Timer</div>
+        <div class="info-chip">⚡ Speed Bonus Allowed</div>
+      </div>
+
+      <button class="start-btn" id="startBtn" disabled>
+        <span class="btn-text">Enter at least 2 players</span>
+      </button>
+      <p class="footer-note">Pass-and-play local tournament rules apply</p>
     </div>
   </div>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDnImDBW3zqEZbBkgnQDLLmQiz_dWX5euk",
-      authDomain: "pmmasters-20a3b.firebaseapp.com",
-      projectId: "pmmasters-20a3b",
-      storageBucket: "pmmasters-20a3b.firebasestorage.app",
-      messagingSenderId: "776685093484",
-      appId: "1:776685093484:web:4fb70b55df26123c160e49",
-      measurementId: "G-GFKTLE9DBG",
-      databaseURL: "https://pmmasters-20a3b-default-rtdb.firebaseio.com"
-    };
+    // Create background ambient particle layout
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 25; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.width = p.style.height = `${Math.random() * 4 + 2}px`;
+      p.style.left = `${Math.random() * 100}%`;
+      p.style.animationDuration = `${Math.random() * 6 + 4}s`;
+      p.style.animationDelay = `${Math.random() * 5}s`;
+      container.appendChild(p);
+    }
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const roomRef = db.ref("pm_masters_global");
+    // Input monitoring logic
+    const inputs = document.querySelectorAll('.player-input');
+    const startBtn = document.getElementById('startBtn');
+    const badge = document.getElementById('playerCountBadge');
 
-    let myKey = null;
-
-    document.getElementById('joinBtn').addEventListener('click', () => {
-      const name = document.getElementById('playerName').value.trim();
-      if (!name) return alert("Enter a name!");
-
-      const newPlayer = roomRef.child('players').push();
-      myKey = newPlayer.key;
-      localStorage.setItem('myKey', myKey);
-      localStorage.setItem('myName', name);
-
-      newPlayer.set({ name: name, score: 0, status: "waiting" });
-      newPlayer.onDisconnect().remove();
-
-      document.getElementById('joinSection').style.display = 'none';
-      document.getElementById('waitingSection').style.display = 'block';
+    inputs.forEach(input => {
+      input.addEventListener('input', checkFormState);
+      input.addEventListener('focus', () => input.closest('.player-row').classList.add('focused'));
+      input.addEventListener('blur', () => input.closest('.player-row').classList.remove('focused'));
     });
 
-    roomRef.on('value', (snap) => {
-      const data = snap.val() || {};
-      const players = data.players || {};
-      const state = data.gameState || 'lobby';
-
-      const pKeys = Object.keys(players);
-      document.getElementById('playerCount').textContent = pKeys.length;
-
-      const list = document.getElementById('playerList');
-      list.innerHTML = '';
-      pKeys.forEach(k => {
-        list.innerHTML += `<div class="player-row"><span>🎮 ${players[k].name}</span> <span>${players[k].status}</span></div>`;
-      });
-
-      const startBtn = document.getElementById('startBtn');
-      if (pKeys.length >= 2) {
+    function checkFormState() {
+      const names = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
+      badge.textContent = `${names.length} / 5`;
+      
+      if (names.length >= 2) {
         startBtn.disabled = false;
-        startBtn.textContent = "Start Match 🚀";
+        startBtn.classList.add('ready');
+        startBtn.innerHTML = `Start Match — ${names.length} Combatants ⚔️`;
+      } else {
+        startBtn.disabled = true;
+        startBtn.classList.remove('ready');
+        startBtn.innerHTML = `Enter at least 2 players`;
       }
+    }
 
-      if (state === 'playing') {
-        window.location.href = 'game.html';
-      }
-    });
-
-    document.getElementById('startBtn').addEventListener('click', () => {
-      roomRef.update({ gameState: 'playing' });
+    startBtn.addEventListener('click', () => {
+      const names = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
+      if (names.length < 2) return;
+      
+      localStorage.setItem('pmPlayers', JSON.stringify(names));
+      localStorage.removeItem('pmScores');
+      localStorage.removeItem('pmCurrentPlayer');
+      
+      startBtn.innerHTML = `Deploying Arena...`;
+      startBtn.disabled = true;
+      setTimeout(() => { window.location.href = 'game.html'; }, 800);
     });
   </script>
 </body>
