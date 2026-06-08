@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PM Masters — Core Terminal Hub</title>
+  <title>PM Masters — Entrance Hub</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
@@ -11,66 +11,54 @@
 <body>
   <div class="bg-grid"></div>
 
-  <div class="lb-container" style="max-width: 520px;">
+  <div class="lb-container">
     <div class="lb-header">
-      <h1 class="lb-title">Matchmaking <span>Hub</span></h1>
+      <h1 class="lb-title">Battle <span>Lobby</span></h1>
       <p class="lb-subtitle" id="lobbyContextStatusSub">Configure your session track</p>
     </div>
 
-    <!-- STAGE 1: Profile Assignment -->
     <div id="stepNameViewBlock">
       <div style="margin-bottom: 20px; text-align: left;">
-        <label style="color: var(--text3); font-family: 'Share Tech Mono'; display:block; margin-bottom:8px;">IDENTITY HANDLE:</label>
+        <label style="color: var(--text-secondary); display:block; margin-bottom:8px; font-weight: bold; font-size: 0.85rem;">IDENTITY HANDLE:</label>
         <input type="text" id="playerJoinNameInput" placeholder="ENTER GLADIATOR NAME" maxlength="14" style="width:100%; padding:14px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:8px; color:#fff; font-size:1.1rem; text-transform:uppercase; outline:none;">
       </div>
-      <button class="action-btn primary" id="confirmIdentityNameBtn" style="width:100%;">Confirm Identity Key 🔑</button>
+      <button class="action-btn primary" id="confirmIdentityNameBtn">Confirm Identity Key 🔑</button>
     </div>
 
-    <!-- STAGE 2: Room Selection Framework -->
     <div id="stepLobbySelectionBlock" style="display: none;">
-      <h3 style="color:#fff; text-align:left; font-family:'Share Tech Mono'; margin-bottom:12px;">SELECT OPERATIONS TRACK:</h3>
-      
-      <button class="action-btn secondary" id="chooseStudyTrackBtn" style="width:100%; margin-bottom:14px; text-align:left; border-color:var(--cyan); padding:16px;">
+      <button class="action-btn secondary" id="chooseStudyTrackBtn" style="text-align:left; border-color:var(--cyan); padding:16px;">
         <span style="color:var(--cyan); font-weight:bold; display:block;">1. Concepts & Definitions</span>
-        <span style="font-size:0.8rem; color:var(--text3);">Targeted review for structural understanding.</span>
+        <span style="font-size:0.8rem; color:var(--text-secondary);">Targeted review for structural understanding.</span>
       </button>
 
-      <button class="action-btn secondary" id="chooseExamTrackBtn" style="width:100%; text-align:left; border-color:var(--purple); padding:16px;">
-        <span style="color:var(--purple); font-weight:bold; display:block;">2. Actual Exam Questions</span>
-        <span style="font-size:0.8rem; color:var(--text3);">Competitive multiplayer calculations with scaling timers.</span>
+      <button class="action-btn secondary" id="chooseExamTrackBtn" style="text-align:left; border-color:var(--pink); padding:16px; margin-top:14px;">
+        <span style="color:var(--pink); font-weight:bold; display:block;">2. Actual Exam Questions</span>
+        <span style="font-size:0.8rem; color:var(--text-secondary);">Competitive multiplayer calculations with scaling timers.</span>
       </button>
 
-      <!-- Sub-Tier Configuration Drawer -->
-      <div id="examTiersSubDrawer" style="display:none; margin-top:16px; padding:14px; background:rgba(0,0,0,0.2); border-radius:8px; border:1px solid rgba(255,255,255,0.05); text-align:left;">
-        <label style="color: var(--text3); font-family: 'Share Tech Mono'; font-size:0.85rem; display:block; margin-bottom:8px;">CHOOSE INTENSITY LEVEL:</label>
-        <select id="examTierSelectDropdown" style="width:100%; padding:10px; background:#10121b; border:1px solid var(--border); color:#fff; border-radius:6px; font-weight:600; outline:none;">
+      <div id="examTiersSubDrawer" style="display:none; margin-top:16px; padding:14px; background:rgba(0,0,0,0.2); border-radius:8px; border:1px solid var(--border); text-align:left;">
+        <select id="examTierSelectDropdown" style="width:100%; padding:12px; background:var(--bg-main); border:1px solid var(--border); color:#fff; border-radius:6px; font-weight:600; outline:none;">
           <option value="level1">Easy Level 1 (1m 30s per task)</option>
           <option value="level2">Medium Level 2 (3m 00s per task)</option>
           <option value="level3">Hard Level 3 (5m 00s per task)</option>
         </select>
-        <button class="action-btn primary" id="confirmExamLobbyJoinBtn" style="width:100%; margin-top:12px; font-size:0.9rem; padding:10px;">Enter Exam Arena ⚔️</button>
+        <button class="action-btn primary" id="confirmExamLobbyJoinBtn" style="margin-top:12px;">Enter Exam Arena ⚔️</button>
       </div>
     </div>
 
-    <!-- STAGE 3: Connected Waitroom -->
     <div id="stepWaitroomBlock" style="display: none;">
       <div style="background: rgba(0,243,255,0.05); border: 1px dashed var(--cyan); padding: 12px; border-radius: 8px; margin-bottom: 20px;">
-        <p id="waitroomTrackTitleLabel" style="color: var(--cyan); font-family: 'Share Tech Mono'; font-weight: bold; margin: 0; text-transform:uppercase;"></p>
+        <p id="waitroomTrackTitleLabel" style="color: var(--cyan); font-weight: bold; margin: 0; text-transform:uppercase;"></p>
       </div>
-
-      <h3 style="color:#fff; text-align:left; font-family:'Share Tech Mono'; margin:0 0 10px; display:flex; justify-content:space-between;">
+      <h3 style="color:#fff; text-align:left; margin:0 0 10px; display:flex; justify-content:space-between; font-size: 1rem;">
         <span>ROSTER QUEUE:</span> <span id="userCountRatioBadge" style="color:var(--gold);">0 / 10</span>
       </h3>
       <div id="lobbyRosterLiveContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:24px;"></div>
-
-      <button class="action-btn primary" id="hostLaunchMatchBtn" style="width:100%; background: linear-gradient(135deg, var(--gold), var(--purple)); display:none;">Launch Match For Everyone 🚀</button>
+      <button class="action-btn primary" id="hostLaunchMatchBtn" style="background: linear-gradient(135deg, var(--gold), var(--pink)); display:none;">Launch Match For Everyone 🚀</button>
     </div>
   </div>
 
   <script>
-    // Force history clearing to anchor back-button stability patterns
-    localStorage.removeItem('mp_lastMatchReviewDataLog');
-
     const firebaseConfig = {
       apiKey: "AIzaSyDnImDBW3zqEZbBkgnQDLLmQiz_dWX5euk",
       projectId: "pmmasters-20a3b",
@@ -87,21 +75,17 @@
     document.getElementById('confirmIdentityNameBtn').addEventListener('click', () => {
       myAssignedName = document.getElementById('playerJoinNameInput').value.trim().toUpperCase();
       if (!myAssignedName) { alert("Please input your user handle."); return; }
-      
       document.getElementById('stepNameViewBlock').style.display = 'none';
       document.getElementById('stepLobbySelectionBlock').style.display = 'block';
     });
 
     document.getElementById('chooseStudyTrackBtn').addEventListener('click', () => {
-      selectedMode = "study";
-      selectedTier = "none";
-      targetedLobbyPathNode = "lobby_study_concepts";
+      selectedMode = "study"; selectedTier = "none"; targetedLobbyPathNode = "lobby_study_concepts";
       attemptServerRoomConnection();
     });
 
     document.getElementById('chooseExamTrackBtn').addEventListener('click', () => {
-      selectedMode = "exam";
-      document.getElementById('examTiersSubDrawer').style.display = 'block';
+      selectedMode = "exam"; document.getElementById('examTiersSubDrawer').style.display = 'block';
     });
 
     document.getElementById('confirmExamLobbyJoinBtn').addEventListener('click', () => {
@@ -112,17 +96,11 @@
 
     function attemptServerRoomConnection() {
       const targetLobbyRef = db.ref(`pm_masters_multiplayer_session/${targetedLobbyPathNode}`);
-      
       targetLobbyRef.child('players').once('value', (snapshot) => {
         const playersObject = snapshot.val() || {};
-        const activeCount = Object.keys(playersObject).length;
-
-        // MAX 10 USER LOCK
-        if (activeCount >= 10) {
-          alert("This operating channel is currently full (Max 10 users). Please select another level or wait.");
-          return;
+        if (Object.keys(playersObject).length >= 10) {
+          alert("Lobby full (Max 10 users)."); return;
         }
-
         const playerKey = targetLobbyRef.child('players').push().key;
         localStorage.setItem('mp_myPlayerKey', playerKey);
         localStorage.setItem('mp_myPlayerName', myAssignedName);
@@ -131,9 +109,7 @@
         localStorage.setItem('mp_selectedTier', selectedTier);
 
         targetLobbyRef.child('players').child(playerKey).set({
-          name: myAssignedName,
-          score: 0,
-          status: "In Lobby"
+          name: myAssignedName, score: 0, status: "In Lobby"
         }).then(() => {
           document.getElementById('stepLobbySelectionBlock').style.display = 'none';
           document.getElementById('stepWaitroomBlock').style.display = 'block';
@@ -143,31 +119,24 @@
     }
 
     function connectLobbySynchronizedStreams(roomRef, keyId) {
-      document.getElementById('waitroomTrackTitleLabel').textContent = `🛰️ Channel: ${selectedMode} ${selectedTier !== 'none' ? selectedTier : ''}`;
-
+      document.getElementById('waitroomTrackTitleLabel').textContent = `Track: ${selectedMode} ${selectedTier !== 'none' ? selectedTier : ''}`;
       roomRef.child('gameState').on('value', (snap) => {
-        if (snap.val() === "active") {
-          window.location.replace('game.html'); // Back-button trap anchor
-        }
+        if (snap.val() === "active") { window.location.replace('game.html'); }
       });
-
       roomRef.child('players').on('value', (snap) => {
         const rosterContainer = document.getElementById('lobbyRosterLiveContainer');
         rosterContainer.innerHTML = '';
         const rosterData = snap.val() || {};
         const userKeys = Object.keys(rosterData);
-
         document.getElementById('userCountRatioBadge').textContent = `${userKeys.length} / 10`;
 
         if (userKeys.length > 0 && userKeys[0] === keyId) {
           document.getElementById('hostLaunchMatchBtn').style.display = 'block';
         }
-
         userKeys.forEach(id => {
-          const p = rosterData[id];
           const row = document.createElement('div');
-          row.style.cssText = "background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:12px; border-radius:6px; color:#fff; text-align:left; font-weight:600; display:flex; justify-content:space-between;";
-          row.innerHTML = `<span>👤 ${p.name}</span> <span style="color:var(--cyan); font-family:'Share Tech Mono';">[LOCKED IN]</span>`;
+          row.className = 'res-row';
+          row.innerHTML = `<span>👤 ${rosterData[id].name}</span> <span style="color:var(--cyan);">[READY]</span>`;
           rosterContainer.appendChild(row);
         });
       });
