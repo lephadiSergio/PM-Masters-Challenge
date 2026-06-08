@@ -1,34 +1,235 @@
-document
-.getElementById("startBtn")
-.addEventListener("click", startGame);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PM Masters · Match Live</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-grid"></div>
 
-function startGame(){
+  <div class="player-transition" id="playerTransition">
+    <div class="transition-card">
+      <div class="transition-avatar" id="transAvatar">PX</div>
+      <div class="transition-label">UP NEXT IN ARENA</div>
+      <div class="transition-name" id="transName">Player Name</div>
+      <div class="transition-sub">Hand over the device. Your custom 15 questions load next.</div>
+      <button class="transition-btn" id="transBtn">I'm Ready 🎮</button>
+    </div>
+  </div>
 
-    let players = [];
+  <div class="feedback-overlay" id="feedbackOverlay">
+    <div class="feedback-content">
+      <div class="feedback-icon" id="feedbackIcon">✅</div>
+      <div class="feedback-title" id="feedbackTitle">Correct!</div>
+      <div class="feedback-points" id="feedbackPoints">+7 pts</div>
+      <div class="feedback-explanation" id="feedbackExplanation">Explanatory note goes here.</div>
+    </div>
+  </div>
 
-    let inputs =
-    document.querySelectorAll("input");
+  <div class="game-wrapper" id="gameWrapper">
+    <div class="game-topbar">
+      <div class="current-player-pill">
+        <div class="cp-avatar" id="cpAvatar">P1</div>
+        <div class="cp-name" id="cpName">Player</div>
+      </div>
+      <img src="assets/logo.png" alt="PM" class="brand-logo-hud" onerror="this.style.display='none'">
+      <div class="game-progress-info">
+        <span id="questionCounter">Q 1 / 15</span>
+      </div>
+      <div class="score-pill">
+        <span class="score-label">RAW SCORE</span>
+        <span class="score-val" id="currentScore">0</span>
+      </div>
+    </div>
 
-    inputs.forEach(input => {
+    <div class="timer-track">
+      <div class="timer-fill" id="timerFill"></div>
+    </div>
 
-        if(input.value.trim() !== ""){
+    <div class="q-card" id="qCard">
+      <div class="q-topic" id="qTopic">Chapter Knowledge Domain</div>
+      <div class="q-number" id="qNumber">Question #</div>
+      <div class="q-text" id="qText">Active scenario loading...</div>
+      <div class="answers-grid" id="answersGrid"></div>
+    </div>
+  </div>
 
-            players.push(input.value);
-        }
+  <script src="data/questions.js"></script>
+  <script>
+    // Game state tracking parameters
+    const players = JSON.parse(localStorage.getItem('pmPlayers') || '[]');
+    if (players.length < 2) { window.location.href = 'index.html'; }
 
-    });
-
-    if(players.length < 2){
-
-        alert("Minimum 2 players");
-        return;
+    let scores = JSON.parse(localStorage.getItem('pmScores') || 'null');
+    if (!scores) {
+      scores = {};
+      players.forEach(p => scores[p] = 0);
     }
 
-    localStorage.setItem(
-        "players",
-        JSON.stringify(players)
-    );
+    let currentPlayerIdx = parseInt(localStorage.getItem('pmCurrentPlayer') || '0');
+    let questions = [];
+    let currentQ = 0;
+    let timerInterval = null;
+    let timeLeft = 20;
+    let answered = false;
 
-    window.location.href =
-    "game.html";
-}
+    const TIMER_MAX = 20;
+    const QUESTIONS_PER_PLAYER = 15;
+
+    function initMatchTurn() {
+      if (currentPlayerIdx >= players.length) {
+        localStorage.removeItem('pmCurrentPlayer');
+        window.location.href = 'leaderboard.html';
+        return;
+      }
+      
+      // Select 15 dynamic randomized questions specifically for this player
+      questions = getRandomQuestions(QUESTIONS_PER_PLAYER);
+      currentQ = 0;
+      showPlayerTransitionOverlay();
+    }
+
+    function showPlayerTransitionOverlay() {
+      const name = players[currentPlayerIdx];
+      document.getElementById('transAvatar').textContent = name.substring(0,2).toUpperCase();
+      document.getElementById('transName').textContent = name;
+      document.getElementById('playerTransition').classList.add('active');
+    }
+
+    document.getElementById('transBtn').addEventListener('click', () => {
+      document.getElementById('playerTransition').classList.remove('active');
+      loadQuestionBoard();
+    });
+
+    function loadQuestionBoard() {
+      answered = false;
+      const q = questions[currentQ];
+      
+      document.getElementById('cpAvatar').textContent = players[currentPlayerIdx].substring(0,2).toUpperCase();
+      document.getElementById('cpName').textContent = players[currentPlayerIdx];
+      document.getElementById('questionCounter').textContent = `Q ${currentQ + 1} / ${QUESTIONS_PER_PLAYER}`;
+      document.getElementById('currentScore').textContent = scores[players[currentPlayerIdx]];
+      
+      document.getElementById('qTopic').textContent = q.topic;
+      document.getElementById('qNumber').textContent = `Scenario ${currentQ + 1}`;
+      document.getElementById('qText').textContent = q.question;
+
+      const grid = document.getElementById('answersGrid');
+      grid.innerHTML = '';
+
+      q.answers.forEach((ans, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'answer-btn';
+        btn.textContent = ans;
+        btn.onclick = () => selectAnswer(index);
+        grid.appendChild(btn);
+      });
+
+      startCountdownTrack();
+    }
+
+    function startCountdownTrack() {
+      clearInterval(timerInterval);
+      timeLeft = TIMER_MAX;
+      updateTimerUI();
+
+      timerInterval = setInterval(() => {
+        timeLeft -= 0.1;
+        updateTimerUI();
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          evaluateResponse(-1, false); // Timeout trigger
+        }
+      }, 100);
+    }
+
+    function updateTimerUI() {
+      const fill = document.getElementById('timerFill');
+      const percentage = (timeLeft / TIMER_MAX) * 100;
+      fill.style.width = `${percentage}%`;
+    }
+
+    function selectAnswer(idx) {
+      if (answered) return;
+      answered = true;
+      clearInterval(timerInterval);
+
+      const q = questions[currentQ];
+      const isCorrect = (idx === q.correct);
+      evaluateResponse(idx, isCorrect);
+    }
+
+    function evaluateResponse(idx, correct) {
+      const q = questions[currentQ];
+      let awardedPoints = 0;
+      let fastBonus = false;
+
+      if (correct) {
+        awardedPoints = 7;
+        // Fast response condition (within 6 seconds)
+        if (timeLeft >= 14) {
+          awardedPoints += 2;
+          fastBonus = true;
+        }
+        scores[players[currentPlayerIdx]] += awardedPoints;
+      }
+
+      // Display the evaluation popup view card
+      const overlay = document.getElementById('feedbackOverlay');
+      const icon = document.getElementById('feedbackIcon');
+      const title = document.getElementById('feedbackTitle');
+      const ptsLbl = document.getElementById('feedbackPoints');
+      
+      document.getElementById('feedbackExplanation').textContent = q.explanation;
+
+      if (idx === -1) {
+        icon.textContent = '⏰';
+        title.textContent = "Time Expired!";
+        ptsLbl.textContent = "+0 pts (Clock violation)";
+        ptsLbl.className = "feedback-points zero";
+      } else if (correct) {
+        icon.textContent = fastBonus ? '⚡' : '✅';
+        title.textContent = fastBonus ? 'Lightning Speed!' : 'Correct Answer!';
+        ptsLbl.textContent = `+${awardedPoints} pts ${fastBonus ? '(Includes Speed Bonus!)' : ''}`;
+        ptsLbl.className = "feedback-points positive";
+      } else {
+        icon.textContent = '❌';
+        title.textContent = "Incorrect Target!";
+        ptsLbl.textContent = "+0 pts";
+        ptsLbl.className = "feedback-points zero";
+      }
+
+      overlay.classList.add('active');
+
+      setTimeout(() => {
+        overlay.classList.remove('active');
+        advanceStepLoop();
+      }, 2800);
+    }
+
+    function advanceStepLoop() {
+      currentQ++;
+      if (currentQ < QUESTIONS_PER_PLAYER) {
+        loadQuestionBoard();
+      } else {
+        // Complete current player round index parameters
+        localStorage.setItem('pmScores', JSON.stringify(scores));
+        currentPlayerIdx++;
+        localStorage.setItem('pmCurrentPlayer', currentPlayerIdx);
+
+        if (currentPlayerIdx < players.length) {
+          initMatchTurn();
+        } else {
+          localStorage.removeItem('pmCurrentPlayer');
+          window.location.href = 'leaderboard.html';
+        }
+      }
+    }
+
+    // Launch core engine workflow
+    initMatchTurn();
+  </script>
+</body>
+</html>
