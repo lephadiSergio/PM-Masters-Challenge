@@ -64,8 +64,16 @@
 
     let localGamePlayReviewLog = [];
 
-    // TIMER CHANGED TO 25 SECONDS
     const CLOCK_TIME_LIMIT_MAX = 25;
+
+    // SECURITY ACTION GATEKEEPER: Ensure game state is set to active before rendering anything
+    serverRoomRef.child('gameState').once('value', (snap) => {
+      if (snap.val() !== "active") {
+        window.location.href = 'index.html';
+      } else {
+        renderActiveQuestionRow();
+      }
+    });
 
     function renderActiveQuestionRow() {
       if (currentQuestionIdx >= questionBankArray.length) {
@@ -140,7 +148,6 @@
       let gainedPoints = 0;
       if (isCorrect) {
         gainedPoints = 7;
-        // Lightning bonus adjusted proportionally for answers submitted in under 6 seconds
         if (clockSecondsTimeRemaining >= 19) { gainedPoints += 2; }
         localAccumulatedScore += gainedPoints;
       }
@@ -164,8 +171,6 @@
       currentQuestionIdx++;
       renderActiveQuestionRow();
     }
-
-    renderActiveQuestionRow();
   </script>
 </body>
 </html>
