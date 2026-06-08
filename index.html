@@ -1,44 +1,95 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>PM Masters Challenge</title>
-
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>PM Masters Challenge</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 </head>
-
 <body>
+  <div class="container" id="lobbyBox">
+    <!-- 🖼️ LOGO INSERTED HERE -->
+    <img src="assets/logo.png" alt="PM Masters Logo" class="game-logo">
+    
+    <h1>PM Masters <span>Challenge</span></h1>
+    <p>Real-Time PMBOK Exam Simulator</p>
 
-<div class="container">
-
-    <h1>🏆 PM Masters Challenge</h1>
-
-    <p>
-        Test your Project Management Knowledge
-    </p>
-
-    <div id="playerSection">
-
-        <input type="text" placeholder="Player 1">
-
-        <input type="text" placeholder="Player 2">
-
-        <input type="text" placeholder="Player 3">
-
-        <input type="text" placeholder="Player 4">
-
-        <input type="text" placeholder="Player 5">
-
+    <div id="joinSection">
+      <input type="text" id="playerName" placeholder="Enter your name..." maxlength="15">
+      <br>
+      <button class="btn" id="joinBtn">Join Lobby</button>
     </div>
 
-    <button id="startBtn">
-        Start Game
-    </button>
+    <div id="waitingSection" style="display: none;">
+      <h2>Players in Lobby: <span id="playerCount">1</span></h2>
+      <div class="player-list" id="playerList"></div>
+      <button class="btn" id="startBtn" disabled>Waiting for players...</button>
+    </div>
+  </div>
 
-</div>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDnImDBW3zqEZbBkgnQDLLmQiz_dWX5euk",
+      authDomain: "pmmasters-20a3b.firebaseapp.com",
+      projectId: "pmmasters-20a3b",
+      storageBucket: "pmmasters-20a3b.firebasestorage.app",
+      messagingSenderId: "776685093484",
+      appId: "1:776685093484:web:4fb70b55df26123c160e49",
+      measurementId: "G-GFKTLE9DBG",
+      databaseURL: "https://pmmasters-20a3b-default-rtdb.firebaseio.com"
+    };
 
-<script src="script.js"></script>
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const roomRef = db.ref("pm_masters_global");
 
+    let myKey = null;
+
+    document.getElementById('joinBtn').addEventListener('click', () => {
+      const name = document.getElementById('playerName').value.trim();
+      if (!name) return alert("Enter a name!");
+
+      const newPlayer = roomRef.child('players').push();
+      myKey = newPlayer.key;
+      localStorage.setItem('myKey', myKey);
+      localStorage.setItem('myName', name);
+
+      newPlayer.set({ name: name, score: 0, status: "waiting" });
+      newPlayer.onDisconnect().remove();
+
+      document.getElementById('joinSection').style.display = 'none';
+      document.getElementById('waitingSection').style.display = 'block';
+    });
+
+    roomRef.on('value', (snap) => {
+      const data = snap.val() || {};
+      const players = data.players || {};
+      const state = data.gameState || 'lobby';
+
+      const pKeys = Object.keys(players);
+      document.getElementById('playerCount').textContent = pKeys.length;
+
+      const list = document.getElementById('playerList');
+      list.innerHTML = '';
+      pKeys.forEach(k => {
+        list.innerHTML += `<div class="player-row"><span>🎮 ${players[k].name}</span> <span>${players[k].status}</span></div>`;
+      });
+
+      const startBtn = document.getElementById('startBtn');
+      if (pKeys.length >= 2) {
+        startBtn.disabled = false;
+        startBtn.textContent = "Start Match 🚀";
+      }
+
+      if (state === 'playing') {
+        window.location.href = 'game.html';
+      }
+    });
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      roomRef.update({ gameState: 'playing' });
+    });
+  </script>
 </body>
-
 </html>
