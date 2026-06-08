@@ -18,17 +18,21 @@
       <p class="lb-subtitle">Real-Time Tournament Tracking System</p>
     </div>
 
+    <!-- Active Live Session Leaderboard Standings Grid Module Wrapper -->
     <div class="results-list" id="liveScoreboardDisplayContainer" style="margin-bottom: 24px;">
       <p style="text-align:center; color:var(--text3);">Parsing cross-device live network packets...</p>
     </div>
 
+    <!-- Navigation Command Interfaces Control Dashboard Deck -->
     <div class="lb-actions">
       <button class="action-btn primary" id="lobbyResetBtn">Reset Room & Play Again 🔄</button>
     </div>
   </div>
 
   <script>
-    // Link Configuration Target References Mapping Context Settings Credentials
+    const myPlayerKey = localStorage.getItem('mp_myPlayerKey');
+    const myPlayerName = localStorage.getItem('mp_myPlayerName');
+
     const firebaseConfig = {
       apiKey: "AIzaSyDnImDBW3zqEZbBkgnQDLLmQiz_dWX5euk",
       projectId: "pmmasters-20a3b",
@@ -39,22 +43,26 @@
     const serverRoomRef = db.ref("pm_masters_multiplayer_session");
 
     const QUEST_COUNT_LIMIT = 15;
-    const SCORE_THEORETICAL_MAX_CEILING = QUEST_COUNT_LIMIT * 9; // 7 base value + 2 max speed bonus points
+    const SCORE_THEORETICAL_MAX_CEILING = QUEST_COUNT_LIMIT * 9; 
 
     function normalizeRawScoreToPercentage(rawScoreValue) {
       return Math.min(100, Math.round((rawScoreValue / SCORE_THEORETICAL_MAX_CEILING) * 100));
     }
 
-    // Open an active streaming snapshot pipe directly to the database room
     serverRoomRef.child('players').on('value', (snapshot) => {
       const recordsMap = snapshot.val() || {};
       
-      // Map database items directly into a sorted array
       const compiledSortedRoster = Object.keys(recordsMap).map(keyId => {
         const item = recordsMap[keyId];
+        // FIX: If network drops the name property, fall back to our cached user identities
+        let cleanName = item.name;
+        if (!cleanName) {
+          cleanName = (keyId === myPlayerKey) ? myPlayerName : "Gladiator Connected";
+        }
+
         return {
           id: keyId,
-          name: item.name || "Unknown Gladiator",
+          name: cleanName,
           raw: item.score || 0,
           percentage: normalizeRawScoreToPercentage(item.score || 0),
           status: item.status || "Active"
@@ -70,19 +78,15 @@
       }
 
       compiledSortedRoster.forEach((playerNode, index) => {
-        // Dynamic podium styling markers
         const rankPrefixString = (index === 0) ? "🥇" : (index === 1) ? "🥈" : (index === 2) ? "🥉" : `#${index + 1}`;
         
-        // Live status indicator strings to show who's actively answering questions vs who's finished
         const inlineStatusMarkerBadge = (playerNode.status === "Finished Match") 
           ? `<span style="color:var(--cyan); font-size:0.75rem; font-family:'Share Tech Mono'; margin-left:10px;">[DONE]</span>` 
           : `<span style="color:var(--pink); font-size:0.75rem; font-family:'Share Tech Mono'; margin-left:10px;">(${playerNode.status})</span>`;
 
-        // Create the row element dynamically using your global style layout variables
         const rowDivElement = document.createElement('div');
         rowDivElement.className = 'res-row';
         
-        // Highlight 1st Place Champion row uniquely
         if (index === 0) {
           rowDivElement.style.border = "1px solid var(--gold)";
           rowDivElement.style.boxShadow = "0 0 15px rgba(255, 215, 0, 0.2)";
@@ -99,7 +103,6 @@
       });
     });
 
-    // Resetting pushes the whole match server data tree state parameters back to blank lobby variables
     document.getElementById('lobbyResetBtn').addEventListener('click', () => {
       if (confirm("This cleans out the entire current lobby room data. Ready to start a fresh multiplayer round?")) {
         serverRoomRef.set({
