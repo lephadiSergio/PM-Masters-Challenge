@@ -81,8 +81,10 @@
     function renderActiveQuestionRow() {
       if (currentQuestionIdx >= 15) {
         clearInterval(turnCountDownTimerInterval);
-        // Flag player as finalized inside server cluster records array structures
+        
+        // FIX: Retain player name when flagging final status
         serverRoomRef.child('players').child(myPlayerKey).update({
+          name: myPlayerName,
           status: "Finished Match"
         }).then(() => {
           window.location.href = 'leaderboard.html';
@@ -155,19 +157,19 @@
 
       if (correct) {
         gainedPoints = 7;
-        // Verify lightning speed metrics criteria (Answer provided within initial 6 seconds)
         if (clockSecondsTimeRemaining >= 14) {
           gainedPoints += 2;
           lightningSpeedBonusTriggered = true;
         }
         localAccumulatedScore += gainedPoints;
-
-        // Instantly transmit updated score straight to Firebase real-time cluster strings
-        serverRoomRef.child('players').child(myPlayerKey).update({
-          score: localAccumulatedScore,
-          status: `Answering Q${currentQuestionIdx + 2}`
-        });
       }
+
+      // FIX: Always send 'name' along with score and status modifications so it never drops off
+      serverRoomRef.child('players').child(myPlayerKey).update({
+        name: myPlayerName,
+        score: localAccumulatedScore,
+        status: `Answering Q${currentQuestionIdx + 2}`
+      });
 
       // Configure immediate presentation display panel parameters overlay elements
       const modal = document.getElementById('feedbackOverlay');
