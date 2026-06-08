@@ -19,7 +19,7 @@
       </div>
       <img src="assets/logo.png" alt="PM" class="brand-logo-hud" onerror="this.style.display='none'">
       <div class="game-progress-info">
-        <span id="questionProgressText">Q 1 / 12</span>
+        <span id="questionProgressText">Q 1 / 10</span>
       </div>
       <div class="score-pill">
         <span class="score-label">LIVE SCORE</span>
@@ -54,24 +54,23 @@
     const db = firebase.database();
     const serverRoomRef = db.ref("pm_masters_multiplayer_session");
 
-    // Load full randomized question track
-    let questionBankArray = getRandomQuestions(12);
+    // Pull 10 distinct short questions for this challenge flight
+    let questionBankArray = getRandomQuestions(10);
     let currentQuestionIdx = 0;
     let localAccumulatedScore = 0;
     let turnCountDownTimerInterval = null;
-    let clockSecondsTimeRemaining = 20;
+    let clockSecondsTimeRemaining = 25;
     let questionAnswerLockFlag = false;
 
-    // Track chosen data structural arrays internally for our post-podium review breakdown page
     let localGamePlayReviewLog = [];
 
-    const CLOCK_TIME_LIMIT_MAX = 20;
+    // TIMER CHANGED TO 25 SECONDS
+    const CLOCK_TIME_LIMIT_MAX = 25;
 
     function renderActiveQuestionRow() {
       if (currentQuestionIdx >= questionBankArray.length) {
         clearInterval(turnCountDownTimerInterval);
         
-        // Save quiz review log history securely in local device storage before jumping away
         localStorage.setItem('mp_lastMatchReviewDataLog', JSON.stringify(localGamePlayReviewLog));
 
         serverRoomRef.child('players').child(myPlayerKey).update({
@@ -92,7 +91,7 @@
       document.getElementById('localScoreLabel').textContent = localAccumulatedScore;
 
       document.getElementById('qTopicText').textContent = q.topic;
-      document.getElementById('qNumberLabel').textContent = `Scenario Challenge ${currentQuestionIdx + 1}`;
+      document.getElementById('qNumberLabel').textContent = `Challenge ${currentQuestionIdx + 1}`;
       document.getElementById('qBodyParagraphText').textContent = q.question;
 
       const gridContainer = document.getElementById('answersLayoutGrid');
@@ -120,7 +119,7 @@
 
         if (clockSecondsTimeRemaining <= 0) {
           clearInterval(turnCountDownTimerInterval);
-          validateSelectedChoiceOption(-1); // Automatically submit as timed out
+          validateSelectedChoiceOption(-1);
         }
       }, 100);
     }
@@ -141,11 +140,11 @@
       let gainedPoints = 0;
       if (isCorrect) {
         gainedPoints = 7;
-        if (clockSecondsTimeRemaining >= 14) { gainedPoints += 2; }
+        // Lightning bonus adjusted proportionally for answers submitted in under 6 seconds
+        if (clockSecondsTimeRemaining >= 19) { gainedPoints += 2; }
         localAccumulatedScore += gainedPoints;
       }
 
-      // Log the information for the summary page
       localGamePlayReviewLog.push({
         questionText: q.question,
         topicText: q.topic,
@@ -156,14 +155,12 @@
         wasCorrectFlag: isCorrect
       });
 
-      // Instantly transmit progress and scores to cloud database nodes
       serverRoomRef.child('players').child(myPlayerKey).update({
         name: myPlayerName,
         score: localAccumulatedScore,
         status: `Answering Q${currentQuestionIdx + 2}`
       });
 
-      // CRITICAL FIX: Jump straight into next question immediately with zero feedback interruptions
       currentQuestionIdx++;
       renderActiveQuestionRow();
     }
