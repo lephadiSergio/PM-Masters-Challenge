@@ -3,152 +3,121 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PM Masters Challenge — Lobby</title>
+  <title>PM Masters — Arena Lobby</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- Firebase Compat Libraries -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <div class="bg-grid"></div>
 
-  <div class="landing-container">
-    <div class="logo-area">
-      <img src="assets/logo.png" alt="PM Masters Crest" class="brand-logo-main" onerror="this.style.display='none'">
-      <h1 class="game-title">PM Masters<span class="accent">Challenge</span></h1>
-      <p class="subtitle">Real-Time Multiplayer Arena</p>
+  <div class="lb-container" style="max-width: 480px;">
+    <div class="lb-header">
+      <img src="assets/logo.png" alt="PM Masters Logo" class="brand-logo-main" style="margin: 0 auto 10px; display: block;" onerror="this.style.display='none'">
+      <h1 class="lb-title">Battle <span>Lobby</span></h1>
+      <p class="lb-subtitle">Secure your identity to join the session</p>
     </div>
 
-    <div class="player-setup-card">
-      <!-- Entry View Screen -->
-      <div id="joinView">
-        <h2 class="setup-title">Enter Tournament</h2>
-        <div class="player-inputs">
-          <div class="player-row" id="inputWrapper">
-            <div class="player-avatar">⚙️</div>
-            <input type="text" id="usernameInput" class="player-input" placeholder="Your Gladiator Name..." maxlength="14" />
-          </div>
-        </div>
-        <button class="start-btn ready" id="joinBtn">Connect to Stadium ⚡</button>
+    <!-- Phase 1: Name Entry View Form Box Section Module -->
+    <div id="authFormViewBlock">
+      <div style="margin-bottom: 20px; text-align: left;">
+        <label style="color: var(--text3); font-family: 'Share Tech Mono'; display:block; margin-bottom:8px;">ENTER GLADIATOR NAME:</label>
+        <input type="text" id="playerJoinNameInput" placeholder="e.g., GIORGIO MAX" maxlength="14" style="width:100%; padding:14px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:8px; color:#fff; font-size:1.1rem; font-weight:600; outline:none; text-transform:uppercase;">
+      </div>
+      <button class="action-btn primary" id="enterLobbyRoomBtn" style="width:100%;">Connect to Server Cluster 📡</button>
+    </div>
+
+    <!-- Phase 2: Live Waitroom View (Hidden Initially) -->
+    <div id="waitroomViewBlock" style="display: none;">
+      <div style="background: rgba(255,0,127,0.05); border: 1px dashed var(--pink); padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+        <p style="color: var(--pink); font-family: 'Share Tech Mono'; font-weight: bold; margin: 0; animation: pulse 1.5s infinite;">⏳ WAITING FOR HOST TO START THE MATCH...</p>
       </div>
 
-      <!-- Live Lobby Waiting Room View -->
-      <div id="lobbyView" style="display: none;">
-        <h2 class="setup-title">Live Stadium Roster <span class="player-count-badge" id="liveCountLabel">0 Players</span></h2>
-        <div class="player-inputs" id="liveLobbyRoster" style="margin-bottom: 24px; max-height: 240px; overflow-y: auto;">
-          <!-- Active connected players populate live here -->
-        </div>
-        <div class="setup-info">
-          <div class="info-chip">🎯 15 Random Questions</div>
-          <div class="info-chip">⏰ 20s Live Clock</div>
-          <div class="info-chip">📱 Cross-Device Sync</div>
-        </div>
-        <button class="start-btn" id="launchMatchBtn" disabled>Waiting for Host...</button>
+      <h3 style="color:#fff; text-align:left; font-family:'Share Tech Mono'; margin-bottom:12px;">CONNECTED PLAYERS:</h3>
+      <div id="lobbyRosterLiveContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:24px; max-height:200px; overflow-y:auto;">
+        <!-- Filled dynamically -->
       </div>
-      <p class="footer-note" style="margin-top: 15px;">Powered by Firebase Realtime Cluster Engine</p>
+
+      <button class="action-btn primary" id="hostLaunchMatchBtn" style="width:100%; background: linear-gradient(135deg, var(--gold), var(--purple)); display:none;">Launch Match For Everyone 🚀</button>
     </div>
   </div>
 
   <script>
-    // HARDCODED DB CONFIGURATION KEYS
     const firebaseConfig = {
       apiKey: "AIzaSyDnImDBW3zqEZbBkgnQDLLmQiz_dWX5euk",
-      authDomain: "pmmasters-20a3b.firebaseapp.com",
       projectId: "pmmasters-20a3b",
-      storageBucket: "pmmasters-20a3b.firebasestorage.app",
-      messagingSenderId: "776685093484",
-      appId: "1:776685093484:web:4fb70b55df26123c160e49",
-      measurementId: "G-GFKTLE9DBG",
       databaseURL: "https://pmmasters-20a3b-default-rtdb.firebaseio.com"
     };
-
-    // Initialize Connection Instance
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const serverRoomRef = db.ref("pm_masters_multiplayer_session");
 
-    let myPlayerKey = null;
-    let localPlayerName = "";
+    let uniqueAssignedPlayerKey = localStorage.getItem('mp_myPlayerKey') || null;
 
-    const usernameInput = document.getElementById('usernameInput');
-    usernameInput.addEventListener('focus', () => document.getElementById('inputWrapper').classList.add('focused'));
-    usernameInput.addEventListener('blur', () => document.getElementById('inputWrapper').classList.remove('focused'));
+    // Track active connection variables pipelines
+    document.getElementById('enterLobbyRoomBtn').addEventListener('click', () => {
+      const parsedNameInput = document.getElementById('playerJoinNameInput').value.trim().toUpperCase();
+      if (!parsedNameInput) { alert("Please type in a valid name first!"); return; }
 
-    // Handle Joining Action Entry Pipeline
-    document.getElementById('joinBtn').addEventListener('click', () => {
-      localPlayerName = usernameInput.value.trim();
-      if (!localPlayerName) { alert("Please type your name before entering!"); return; }
+      if (!uniqueAssignedPlayerKey) {
+        uniqueAssignedPlayerKey = serverRoomRef.child('players').push().key;
+        localStorage.setItem('mp_myPlayerKey', uniqueAssignedPlayerKey);
+      }
+      localStorage.setItem('mp_myPlayerName', parsedNameInput);
 
-      // Append data node record structure securely to cloud roster session
-      const playerRecordRef = serverRoomRef.child('players').push();
-      myPlayerKey = playerRecordRef.key;
-
-      // Save credentials locally inside cache memory so other screens remember us
-      localStorage.setItem('mp_myPlayerKey', myPlayerKey);
-      localStorage.setItem('mp_myPlayerName', localPlayerName);
-
-      // Save initial data array state mapping parameters inside Firebase clusters
-      playerRecordRef.set({
-        name: localPlayerName,
+      // Register onto the backend cluster node matrix tracking variables
+      serverRoomRef.child('players').child(uniqueAssignedPlayerKey).set({
+        name: parsedNameInput,
         score: 0,
-        status: "Lobby waiting..."
+        status: "In Lobby"
+      }).then(() => {
+        // Swap viewing layouts smoothly
+        document.getElementById('authFormViewBlock').style.display = 'none';
+        document.getElementById('waitroomViewBlock').style.display = 'block';
+        activateLobbyLiveStreamingListeners();
+      });
+    });
+
+    function activateLobbyLiveStreamingListeners() {
+      // 1. Monitor game state to see if a host triggers a start command launch sequence
+      serverRoomRef.child('gameState').on('value', (snap) => {
+        if (snap.val() === "active") {
+          window.location.href = 'game.html';
+        }
       });
 
-      // Crucial safe disconnect guard feature: Automatically wipes player node out of the room if they close their browser tab
-      playerRecordRef.onDisconnect().remove();
+      // 2. Stream all currently connected users onto everyone's screens in real time
+      serverRoomRef.child('players').on('value', (snap) => {
+        const listContainer = document.getElementById('lobbyRosterLiveContainer');
+        listContainer.innerHTML = '';
+        const playersData = snap.val() || {};
+        
+        const keyIdsArray = Object.keys(playersData);
+        
+        // The first player to connect is appointed the Host and gets the "Launch Match" button
+        if (keyIdsArray.length > 0 && keyIdsArray[0] === uniqueAssignedPlayerKey) {
+          document.getElementById('hostLaunchMatchBtn').style.display = 'block';
+        }
 
-      // Shift interface view models seamlessly
-      document.getElementById('joinView').style.display = 'none';
-      document.getElementById('lobbyView').style.display = 'block';
-    });
-
-    // Continuously monitor room synchronization updates
-    serverRoomRef.on('value', (snapshot) => {
-      const data = snapshot.val() || {};
-      const playersList = data.players || {};
-      const currentGameState = data.gameState || 'lobby';
-
-      const totalConnected = Object.keys(playersList).length;
-      document.getElementById('liveCountLabel').textContent = `${totalConnected} Players`;
-
-      // Draw the names of everyone connected on their different mobile devices
-      const rosterElement = document.getElementById('liveLobbyRoster');
-      rosterElement.innerHTML = '';
-      
-      Object.keys(playersList).forEach(key => {
-        const p = playersList[key];
-        const isMeLabel = (key === myPlayerKey) ? " (You)" : "";
-        rosterElement.innerHTML += `
-          <div class="player-row">
-            <div class="player-avatar">${p.name.substring(0,2).toUpperCase()}</div>
-            <div class="player-input" style="color:#fff; font-weight:600; padding-left:5px;">${p.name}${isMeLabel}</div>
-            <div class="player-count-badge" style="background:#000; border-color:var(--purple); color:var(--purple); font-size:0.7rem;">${p.status}</div>
-          </div>
-        `;
+        keyIdsArray.forEach(id => {
+          const p = playersData[id];
+          const div = document.createElement('div');
+          div.style.cssText = "background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); padding:10px 14px; border-radius:6px; color:#fff; text-align:left; font-weight:600; font-size:0.95rem; display:flex; justify-content:space-between; align-items:center;";
+          div.innerHTML = `<span>👤 ${p.name}</span> <span style="color:var(--cyan); font-size:0.75rem; font-family:'Share Tech Mono';">[READY]</span>`;
+          listContainer.appendChild(div);
+        });
       });
+    }
 
-      // Host management parameters activation layout
-      const launcherBtn = document.getElementById('launchMatchBtn');
-      if (totalConnected >= 1) {
-        launcherBtn.disabled = false;
-        launcherBtn.classList.add('ready');
-        launcherBtn.innerHTML = `Launch Battle Arena 🚀`;
-      } else {
-        launcherBtn.disabled = true;
-        launcherBtn.classList.remove('ready');
-        launcherBtn.innerHTML = `Waiting for Combatants...`;
-      }
-
-      // Synchronized redirect command validation node execution pipeline
-      if (currentGameState === 'playing') {
-        window.location.href = 'game.html';
-      }
+    // Trigger game startup command pipeline across all screens
+    document.getElementById('hostLaunchMatchBtn').addEventListener('click', () => {
+      serverRoomRef.update({ gameState: "active" });
     });
 
-    // Clicking launch pushes a signal to database forcing all browsers to load simultaneously
-    document.getElementById('launchMatchBtn').addEventListener('click', () => {
-      serverRoomRef.update({ gameState: 'playing' });
-    });
+    // Auto-login check if the user accidentally reloads but is already registered in the lobby
+    if (uniqueAssignedPlayerKey && localStorage.getItem('mp_myPlayerName')) {
+      document.getElementById('playerJoinNameInput').value = localStorage.getItem('mp_myPlayerName');
+    }
   </script>
 </body>
 </html>
