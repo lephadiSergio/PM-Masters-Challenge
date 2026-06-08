@@ -54,7 +54,9 @@
         <span>ROSTER QUEUE:</span> <span id="userCountRatioBadge" style="color:var(--gold);">0 / 10</span>
       </h3>
       <div id="lobbyRosterLiveContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:24px;"></div>
+      
       <button class="action-btn primary" id="hostLaunchMatchBtn" style="background: linear-gradient(135deg, var(--gold), var(--pink)); display:none;">Launch Match For Everyone 🚀</button>
+      <p id="waitingForHostTextHint" style="color: var(--text-secondary); font-size: 0.85rem; font-style: italic; display: none;">Waiting for the host to launch the questions...</p>
     </div>
   </div>
 
@@ -96,17 +98,26 @@
 
     function attemptServerRoomConnection() {
       const targetLobbyRef = db.ref(`pm_masters_multiplayer_session/${targetedLobbyPathNode}`);
+      
       targetLobbyRef.child('players').once('value', (snapshot) => {
         const playersObject = snapshot.val() || {};
         if (Object.keys(playersObject).length >= 10) {
-          alert("Lobby full (Max 10 users)."); return;
+          alert("Lobby full (Max 10 users). Please select another level or wait."); return;
         }
+        
         const playerKey = targetLobbyRef.child('players').push().key;
         localStorage.setItem('mp_myPlayerKey', playerKey);
         localStorage.setItem('mp_myPlayerName', myAssignedName);
         localStorage.setItem('mp_selectedLobbyNode', targetedLobbyPathNode);
         localStorage.setItem('mp_selectedMode', selectedMode);
         localStorage.setItem('mp_selectedTier', selectedTier);
+
+        // Explicitly force gameState to "waiting" when joining a room if it hasn't been initialized yet
+        targetLobbyRef.child('gameState').once('value', (gameStateSnap) => {
+          if (!gameStateSnap.exists() || gameStateSnap.val() === "complete") {
+            targetLobbyRef.update({ gameState: "waiting" });
+          }
+        });
 
         targetLobbyRef.child('players').child(playerKey).set({
           name: myAssignedName, score: 0, status: "In Lobby"
@@ -120,9 +131,15 @@
 
     function connectLobbySynchronizedStreams(roomRef, keyId) {
       document.getElementById('waitroomTrackTitleLabel').textContent = `Track: ${selectedMode} ${selectedTier !== 'none' ? selectedTier : ''}`;
+      
+      // FIX: Clean up evaluation loop so it checks for exactly "active" before launching
       roomRef.child('gameState').on('value', (snap) => {
-        if (snap.val() === "active") { window.location.replace('game.html'); }
+        if (snap.val() === "active") { 
+          roomRef.child('gameState').off(); // Turn off listener right before navigating
+          window.location.replace('game.html'); 
+        }
       });
+
       roomRef.child('players').on('value', (snap) => {
         const rosterContainer = document.getElementById('lobbyRosterLiveContainer');
         rosterContainer.innerHTML = '';
@@ -130,13 +147,20 @@
         const userKeys = Object.keys(rosterData);
         document.getElementById('userCountRatioBadge').textContent = `${userKeys.length} / 10`;
 
+        // The first player keys into host privileges
         if (userKeys.length > 0 && userKeys[0] === keyId) {
           document.getElementById('hostLaunchMatchBtn').style.display = 'block';
+          document.getElementById('waitingForHostTextHint').style.display = 'none';
+        } else {
+          document.getElementById('hostLaunchMatchBtn').style.display = 'none';
+          document.getElementById('waitingForHostTextHint').style.display = 'block';
         }
+
         userKeys.forEach(id => {
           const row = document.createElement('div');
           row.className = 'res-row';
-          row.innerHTML = `<span>👤 ${rosterData[id].name}</span> <span style="color:var(--cyan);">[READY]</span>`;
+          row.style.margin = "4px 0";
+          row.innerHTML = `<span>👤 ${rosterData[id].name}</span> <span style="color:var(--cyan); font-weight:bold;">[LOBBY]</span>`;
           rosterContainer.appendChild(row);
         });
       });
