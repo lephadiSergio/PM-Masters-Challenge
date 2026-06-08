@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PM Masters — Live Match Board</title>
+  <title>PM Masters — Active Arena</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
@@ -19,31 +19,37 @@
       </div>
       <img src="assets/logo.png" alt="PM" class="brand-logo-hud" onerror="this.style.display='none'">
       <div class="game-progress-info">
-        <span id="questionProgressText">Q 1 / 10</span>
+        <span id="questionProgressText">Task Queue</span>
       </div>
       <div class="score-pill">
-        <span class="score-label">LIVE SCORE</span>
+        <span class="score-label">LIVE POINTS</span>
         <span class="score-val" id="localScoreLabel">0</span>
       </div>
     </div>
 
-    <div class="timer-track">
-      <div class="timer-fill" id="timerFillBar"></div>
-    </div>
+    <div class="timer-track"><div class="timer-fill" id="timerFillBar"></div></div>
 
     <div class="q-card" id="qCard">
-      <div class="q-topic" id="qTopicText">Knowledge Area Category</div>
-      <div class="q-number" id="qNumberLabel">Scenario Investigation</div>
-      <div class="q-text" id="qBodyParagraphText">Processing exam array configuration settings...</div>
+      <div class="q-topic" id="qTopicText">Topic</div>
+      <div class="q-number" id="qNumberLabel">Investigation Unit</div>
+      <div class="q-text" id="qBodyParagraphText">Loading active vectors...</div>
       <div class="answers-grid" id="answersLayoutGrid"></div>
     </div>
   </div>
 
   <script src="data/questions.js"></script>
   <script>
+    // BACK BUTTON TRAP: Forces exit if back buttons are triggered mid-game
+    window.history.pushState(null, null, window.location.href);
+    window.onpopstate = function () { window.location.replace('index.html'); };
+
     const myPlayerKey = localStorage.getItem('mp_myPlayerKey');
     const myPlayerName = localStorage.getItem('mp_myPlayerName');
-    if (!myPlayerKey || !myPlayerName) { window.location.href = 'index.html'; }
+    const activeLobbyNode = localStorage.getItem('mp_selectedLobbyNode');
+    const mode = localStorage.getItem('mp_selectedMode');
+    const tier = localStorage.getItem('mp_selectedTier');
+
+    if (!myPlayerKey || !activeLobbyNode) { window.location.replace('index.html'); }
 
     const firebaseConfig = {
       apiKey: "AIzaSyDnImDBW3zqEZbBkgnQDLLmQiz_dWX5euk",
@@ -52,40 +58,39 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const serverRoomRef = db.ref("pm_masters_multiplayer_session");
+    const serverRoomRef = db.ref(`pm_masters_multiplayer_session/${activeLobbyNode}`);
 
-    // Pull 10 distinct short questions for this challenge flight
-    let questionBankArray = getRandomQuestions(10);
+    // Dynamic Timer Allocator mapping parameters
+    let CLOCK_TIME_LIMIT_MAX = 25; // Default standard concept timer
+    if (mode === "exam") {
+      if (tier === "level1") CLOCK_TIME_LIMIT_MAX = 90;  // 1 min 30s
+      if (tier === "level2") CLOCK_TIME_LIMIT_MAX = 180; // 3 min
+      if (tier === "level3") CLOCK_TIME_LIMIT_MAX = 300; // 5 min
+    }
+
+    let questionBankArray = getSelectedLobbyDataset(mode, tier);
     let currentQuestionIdx = 0;
     let localAccumulatedScore = 0;
     let turnCountDownTimerInterval = null;
-    let clockSecondsTimeRemaining = 25;
+    let clockSecondsTimeRemaining = CLOCK_TIME_LIMIT_MAX;
     let questionAnswerLockFlag = false;
-
     let localGamePlayReviewLog = [];
 
-    const CLOCK_TIME_LIMIT_MAX = 25;
-
-    // SECURITY ACTION GATEKEEPER: Ensure game state is set to active before rendering anything
     serverRoomRef.child('gameState').once('value', (snap) => {
-      if (snap.val() !== "active") {
-        window.location.href = 'index.html';
-      } else {
-        renderActiveQuestionRow();
-      }
+      if (snap.val() !== "active") { window.location.replace('index.html'); } 
+      else { renderActiveQuestionRow(); }
     });
 
     function renderActiveQuestionRow() {
       if (currentQuestionIdx >= questionBankArray.length) {
         clearInterval(turnCountDownTimerInterval);
-        
         localStorage.setItem('mp_lastMatchReviewDataLog', JSON.stringify(localGamePlayReviewLog));
 
         serverRoomRef.child('players').child(myPlayerKey).update({
           name: myPlayerName,
           status: "Finished Match"
         }).then(() => {
-          window.location.href = 'leaderboard.html';
+          window.location.replace('leaderboard.html');
         });
         return;
       }
@@ -95,11 +100,10 @@
 
       document.getElementById('myAvatarIcon').textContent = myPlayerName.substring(0,2).toUpperCase();
       document.getElementById('myNameLabel').textContent = myPlayerName;
-      document.getElementById('questionProgressText').textContent = `Q ${currentQuestionIdx + 1} / ${questionBankArray.length}`;
+      document.getElementById('questionProgressText').textContent = `Task ${currentQuestionIdx + 1} / ${questionBankArray.length}`;
       document.getElementById('localScoreLabel').textContent = localAccumulatedScore;
-
       document.getElementById('qTopicText').textContent = q.topic;
-      document.getElementById('qNumberLabel').textContent = `Challenge ${currentQuestionIdx + 1}`;
+      document.getElementById('qNumberLabel').textContent = `Challenge Task ${currentQuestionIdx + 1}`;
       document.getElementById('qBodyParagraphText').textContent = q.question;
 
       const gridContainer = document.getElementById('answersLayoutGrid');
@@ -122,14 +126,14 @@
       syncCountdownTimerBarUI();
 
       turnCountDownTimerInterval = setInterval(() => {
-        clockSecondsTimeRemaining -= 0.1;
+        clockSecondsTimeRemaining -= 0.2;
         syncCountdownTimerBarUI();
 
         if (clockSecondsTimeRemaining <= 0) {
           clearInterval(turnCountDownTimerInterval);
           validateSelectedChoiceOption(-1);
         }
-      }, 100);
+      }, 200);
     }
 
     function syncCountdownTimerBarUI() {
@@ -145,12 +149,7 @@
       const q = questionBankArray[currentQuestionIdx];
       const isCorrect = (selectedIdx === q.correct);
       
-      let gainedPoints = 0;
-      if (isCorrect) {
-        gainedPoints = 7;
-        if (clockSecondsTimeRemaining >= 19) { gainedPoints += 2; }
-        localAccumulatedScore += gainedPoints;
-      }
+      if (isCorrect) { localAccumulatedScore += 10; }
 
       localGamePlayReviewLog.push({
         questionText: q.question,
